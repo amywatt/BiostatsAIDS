@@ -1,28 +1,58 @@
 ---
 title: "ExploratoryAnalysis"
-output: html_document
+author: "Amy Watt"
+date: "2019-03-28"
+output: html_document: 
+  keep_md: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+aids <- read.csv("AIDSdata.csv")
+library(tidyverse)
+library(ggplot2)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+ggplot(aids, aes(x=as.factor(sex), fill=as.factor(sex))) + geom_bar( ) +
+  scale_fill_brewer(palette = "Set2") + labs(x = "Sex", y = "Count")
+
+ggplot(aids, aes(x=as.factor(raceth), fill=as.factor(raceth))) + geom_bar( ) +
+  scale_fill_brewer(palette = "Set2") + labs(x = "Race/Ethnicity", y = "Count")
+```
+```{r}
+ggplot(aids, aes(x=age)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
+  labs(title="Histogram for Age", x="Age", y="Count") + 
+  xlim(c(10,80)) + ylim(c(0,450))
+```
+Adding a new column in dataframe for combined sex/raceth demographics.
+11 = male, white non-hispanic
+12 = male, black non-hispanic
+13 = male, hispanic
+14 = male, asian/pacific islander
+15 = male, american indian/alaska native
+16 = male, other/unknown
+21 = female, white non-hispanic
+22 = female, black non-hispanic
+23 = female, hispanic
+24 = female, asian/pacific islander
+25 = female, american indian/alaska native
+26 = female, other/unknown
+```{r}
+aids$demo <- NA
+for (elt in 0:length(aids$id)) {
+  s = toString(aids$sex[elt])
+  r = toString(aids$raceth[elt])
+  #aids$demo[elt] <- as.numeric(paste (s, r, sep=''))
+  aids$demo[elt] <- (paste (s, r, sep=''))
+}
+```
+
+```{r}
+ggplot(aids, aes(x=as.factor(demo), fill=as.factor(demo))) + geom_bar( ) +
+  scale_fill_brewer(palette = "Set3") + labs(x = "Demographics", y = "Count")
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
