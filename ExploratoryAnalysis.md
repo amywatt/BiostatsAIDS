@@ -65,15 +65,7 @@ From the p-value of 2.2e-16 in a chi-squared test of proportions, there is a sta
 
 The p-value of 2.047e-09 indicates that there is a significant difference in the proportion of individuals who develop AIDS or die across the different Karnofsky scale groups.
 
-```r
-ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + geom_bar(stat='identity') +
-  scale_fill_brewer(palette = "Set3") + labs(title = 'Karnofsky Frequency', x = "Karnofsky Scale", y = "Count") +  theme(legend.position = "right") +  theme(legend.title=element_blank()) + geom_text(aes(x=dfTab$n, y=dfTab$Freq, label=dfTab$Freq), vjust=-0.3)
-```
-
 ![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
-
-
-![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 
 
@@ -81,13 +73,13 @@ ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + geom_bar(stat='identity') +
 ## Warning: Removed 27 rows containing non-finite values (stat_bin).
 ```
 
-![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 ```
 ## Warning: Removed 10 rows containing non-finite values (stat_bin).
 ```
 
-![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-9-2.png)<!-- -->
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-8-2.png)<!-- -->
 
 CD4 Stratification and Treatment Group:
 

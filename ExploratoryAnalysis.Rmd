@@ -151,11 +151,6 @@ chisq.test(aids$censor_text, aids$karnof)
 ```
 
 The p-value of 2.047e-09 indicates that there is a significant difference in the proportion of individuals who develop AIDS or die across the different Karnofsky scale groups.
-```{r}
-ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + geom_bar(stat='identity') +
-  scale_fill_brewer(palette = "Set3") + labs(title = 'Karnofsky Frequency', x = "Karnofsky Scale", y = "Count") +  theme(legend.position = "right") +  theme(legend.title=element_blank()) + geom_text(aes(x=dfTab$n, y=dfTab$Freq, label=dfTab$Freq), vjust=-0.3)
-```
-
 
 ```{r, echo=FALSE}
 ggplot(aids, aes(x=age)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
