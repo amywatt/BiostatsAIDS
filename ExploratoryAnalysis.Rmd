@@ -1,5 +1,5 @@
 ---
-title: "ExploratoryAnalysis"
+title: "Exploratory Analysis"
 author: "Amy Watt"
 date: "2019-03-28"
 output: 
@@ -12,22 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 aids <- read.csv("AIDSdata.csv")
 library(tidyverse)
 library(ggplot2)
+library(plyr)
 ```
-Adding a new column in dataframe for combined sex/raceth demographics.
 
-11 = male, white non-hispanic
-12 = male, black non-hispanic
-13 = male, hispanic
-14 = male, asian/pacific islander
-15 = male, american indian/alaska native
-16 = male, other/unknown
-21 = female, white non-hispanic
-22 = female, black non-hispanic
-23 = female, hispanic
-24 = female, asian/pacific islander
-25 = female, american indian/alaska native
-26 = female, other/unknown
-```{r}
+```{r, echo=FALSE}
 #Changing data from numerical to text
 aids$censor_text <- NA
 aids$censor_d_text <- NA
@@ -37,11 +25,14 @@ aids$sex_text <- NA
 aids$raceth_text <- NA
 aids$ivdrug_text <- NA
 aids$hemophil_text <- NA
+
+#Adding a new column in dataframe for combined sex/raceth demographics.
+
 aids$demo <- NA
 aids$demo_text <- NA
 ```
 
-```{r}
+```{r, echo=FALSE}
 for (elt in 1:length(aids$id)) {
   s = toString(aids$sex[elt])
   r = toString(aids$raceth[elt])
@@ -109,62 +100,125 @@ for (elt in 1:length(aids$id)) {
 }
 ```  
 
-```{r}
+```{r, echo=FALSE}
 dfTab <- as.data.frame(table(aids$sex_text))
 colnames(dfTab)[1] <- "n"
 dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
 
 ggplot(aids, aes(x=sex_text, fill=sex_text)) + geom_bar( ) +
-  scale_fill_brewer(palette = "Set2") + labs(title = 'Sex Frequency', x = "Sex", y = "Count") + theme(legend.position = "none") + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=0, inherit.aes = FALSE)
+  scale_fill_brewer(palette = "Set2") + labs(title = 'Sex Frequency', x = "Sex", y = "Count") + theme(legend.position = "none") + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=-0.3, inherit.aes = FALSE)
 
+chisq.test(table(aids$sex_text))
+```
+From the p-value of 2.2e-16 in a chi-squared test of proportions, there is a statistically significant difference in the proportion of men enrolled in the study to women.
+
+
+```{r, echo=FALSE}
 dfTab <- as.data.frame(table(aids$raceth_text))
 colnames(dfTab)[1] <- "n"
 dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
 
 ggplot(aids, aes(x=raceth_text, fill=raceth_text)) + geom_bar( ) +
-  scale_fill_brewer(palette = "Set2") + labs(title = 'Race/Ethnicity Frequency', x = "Race/Ethnicity", y = "Count") +  theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=0, inherit.aes = FALSE)
+  scale_fill_brewer(palette = "Set2") + labs(title = 'Race/Ethnicity Frequency', x = "Race/Ethnicity", y = "Count") +  theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=-0.3, inherit.aes = FALSE)
 
+chisq.test(table(aids$raceth_text))
+```
+From the p-value of 2.2e-16 in a chi-squared test of proportions, there is a statistically significant difference in the proportion of race/ethnicity groups enrolled in the study.
+
+```{r, echo=FALSE}
 dfTab <- as.data.frame(table(aids$demo_text))
 colnames(dfTab)[1] <- "n"
 dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
 
 ggplot(aids, aes(x=demo_text, fill=demo_text)) + geom_bar( ) +
-  scale_fill_brewer(palette = "Set3") + labs(title = 'Sex and Race/Ethnicity Demographics', x = "Demographics", y = "Count") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position = "none") + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=0, inherit.aes = FALSE)
+  scale_fill_brewer(palette = "Set3") + labs(title = 'Sex and Race/Ethnicity Demographics', x = "Demographics", y = "Count") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position = "none") + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=-0.3, inherit.aes = FALSE)
+
+chisq.test(table(aids$demo_text))
 ```
+From the p-value of 2.2e-16 in a chi-squared test of proportions, there is a statistically significant difference in the proportion of gender+race/ethnicity groups enrolled in the study.
+
+
+```{r, echo=FALSE}
+dfTab <- as.data.frame(table(aids$karnof, aids$censor_text))
+colnames(dfTab)[1] <- "n"
+colnames(dfTab)[2] <- "censor_text"
+dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
+
+ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + geom_bar(stat='identity') +
+  scale_fill_brewer(palette = "Set3") + labs(title = 'Karnofsky Frequency', x = "Karnofsky Scale", y = "Count") +  theme(legend.position = "right") +  theme(legend.title=element_blank()) + geom_text(aes(x=dfTab$n, y=dfTab$Freq, label=dfTab$Freq), position = position_stack(vjust = 0.5))
+
+chisq.test(aids$censor_text, aids$karnof)
 ```
+
+The p-value of 2.047e-09 indicates that there is a significant difference in the proportion of individuals who develop AIDS or die across the different Karnofsky scale groups.
 ```{r}
+ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + geom_bar(stat='identity') +
+  scale_fill_brewer(palette = "Set3") + labs(title = 'Karnofsky Frequency', x = "Karnofsky Scale", y = "Count") +  theme(legend.position = "right") +  theme(legend.title=element_blank()) + geom_text(aes(x=dfTab$n, y=dfTab$Freq, label=dfTab$Freq), vjust=-0.3)
+```
+
+
+```{r, echo=FALSE}
 ggplot(aids, aes(x=age)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
   labs(title="Histogram for Age", x="Age", y="Count") + 
   xlim(c(10,80)) + ylim(c(0,450))
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 ggplot(aids %>% filter(txgrp == 1 & censor == 1), aes(x=time)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
-  labs(title="Histogram for txgrp1", x="Time to AIDS/Death", y="Count") + 
+  labs(title="Histogram for Control Time to AIDS/Death", x="Time to AIDS/Death", y="Count") + 
   xlim(c(0,90)) + ylim(c(0,8))
 
 ggplot(aids %>% filter(txgrp == 2 & censor == 1), aes(x=time)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
-  labs(title="Histogram for txgrp2", x="Time to AIDS/Death", y="Count") + 
+  labs(title="Histogram for IDV Time to AIDS/Death", x="Time to AIDS/Death", y="Count") + 
   xlim(c(0,90)) + ylim(c(0,8))
 ```
-```{r}
-#subjects stratified by CD4
+
+CD4 Stratification and Treatment Group:
+```{r, echo=FALSE}
 table(aids$txgrp_text, aids$strat2_text)
-
-#higher proportion of CD4>50 die
-table(aids$strat2_text, aids$censor_text)
-
-#lower proportion of AIDS/death with IDV
-table(aids$txgrp_text, aids$censor_text)
-
-#lower proportion of death with IDV
-table(aids$txgrp_text, aids$censor_d_text)
-
-#iv use and AIDS/death
-table(aids$ivdrug_text, aids$censor_text)
-
-#hemphilia and AIDS/death
-table(aids$hemophil_text, aids$censor_text)
+chisq.test(aids$txgrp_text, aids$strat2_text)
 ```
+Subjects were eligible for the trial if their CD4 < 200 and had at least 3 months of prior zidovudine therapy. Randomization was stratified by CD4 cell count at the time of screening into groups of CD4 > 50 and CD4 <= 50. 50.8% of the CD4 <= 50 group recieved IDV while 49.8% of the CD4 > 50 group recieved IDV. The p-value of the chi-squared test of proportions  is very large (0.85), so there is no significant difference in the IDV and treatment proportions across the two CD4 groups.
 
+
+
+CD4 Stratification and AIDS/Death Outcome: 
+```{r, echo=FALSE}
+table(aids$censor_text, aids$strat2_text)
+chisq.test(aids$censor_text, aids$strat2_text)
+```
+4.0% of the CD4 <= 50 group and  14.7% of the CD4 > 50 group experienced AIDS/death. The p-value of the chi-squared test of proportions  is very small (6.015e-08), so there is a significant difference in the proportion of individuals that develop AIDS or die across the two CD4 groups.
+
+
+
+Treatment Group and AIDS/Death Outcome:
+```{r, echo=FALSE}
+table(aids$censor_text, aids$txgrp_text)
+chisq.test(aids$censor_text, aids$txgrp_text)
+```
+5.4% of the IDV group and 10.9% of the Placebo group experienced AIDS/Death. The p-value of the chi-squared test of proportions  is  small (0.004594), so there is a significant difference in the proportion of individuals that develop AIDS or die across the two treatment groups.
+
+
+Treatment Group and Death: 
+```{r, echo=FALSE}
+table(aids$censor_d_text, aids$txgrp_text)
+chisq.test(aids$censor_d_text, aids$txgrp_text)
+```
+1.4% of the IDV group and 3.3% of the Placebo group experienced death. The p-value of the chi-squared test of proportions  is  0.105, so we cannot conclude that there is a significant difference in the proportion of individuals that develop AIDS or die across the two treatment groups.
+
+
+IV Usage and AIDS/Death:
+```{r, echo=FALSE}
+table(aids$censor_text, aids$ivdrug_text)
+chisq.test(aids$censor_text, aids$ivdrug_text)
+```
+The p-value of 0.7401 indicates that there is no significant difference in the proportion of individuals who develop AIDS or die across the different drug usage groups. 
+
+
+Hemophilia and AIDS/Death: 
+```{r, echo=FALSE}
+table(aids$censor_text, aids$hemophil_text)
+chisq.test(aids$censor_text, aids$hemophil_text)
+```
+The p-value of 0.918 indicates that there is no significant difference in the proportion of individuals who develop AIDS or die across the two hemophilia groups. 

@@ -1,5 +1,5 @@
 ---
-title: "ExploratoryAnalysis"
+title: "Exploratory Analysis"
 author: "Amy Watt"
 date: "2019-03-28"
 output: 
@@ -8,177 +8,88 @@ output:
 ---
 
 
-Adding a new column in dataframe for combined sex/raceth demographics.
-
-11 = male, white non-hispanic
-12 = male, black non-hispanic
-13 = male, hispanic
-14 = male, asian/pacific islander
-15 = male, american indian/alaska native
-16 = male, other/unknown
-21 = female, white non-hispanic
-22 = female, black non-hispanic
-23 = female, hispanic
-24 = female, asian/pacific islander
-25 = female, american indian/alaska native
-26 = female, other/unknown
-
-```r
-#Changing data from numerical to text
-aids$censor_text <- NA
-aids$censor_d_text <- NA
-aids$txgrp_text <- NA
-aids$strat2_text <- NA
-aids$sex_text <- NA
-aids$raceth_text <- NA
-aids$ivdrug_text <- NA
-aids$hemophil_text <- NA
-aids$demo <- NA
-aids$demo_text <- NA
-```
 
 
-```r
-for (elt in 1:length(aids$id)) {
-  s = toString(aids$sex[elt])
-  r = toString(aids$raceth[elt])
-  aids$demo[elt] <- as.numeric(paste (s, r, sep=''))
-  
-  if (aids$censor[elt] == 1) {
-    aids$censor_text[elt] <- 'AIDS/death'
-  } else {
-    aids$censor_text[elt] <- 'Otherwise'
-  }
-  
-  if (aids$censor_d[elt] == 1) {
-    aids$censor_d_text[elt] <- 'Death'
-  } else {
-    aids$censor_d_text[elt] <- 'Otherwise'
-  }
-  
-  if (aids$txgrp[elt] == 1) {
-    aids$txgrp_text[elt] <- 'Placebo'
-  } else {
-    aids$txgrp_text[elt] <- 'IDV'
-  }
-  
-  if (aids$strat2[elt] == 1) {
-    aids$strat2_text[elt] <- 'CD4 <= 50'
-  } else {
-    aids$strat2_text[elt] <- 'CD4 > 50'
-  }
-  
-  if (aids$sex[elt] == 1) {
-    aids$sex_text[elt] <- 'Male'
-  } else {
-    aids$sex_text[elt] <- 'Female'
-  }
-  
-  if (aids$raceth[elt] == 1) {
-    aids$raceth_text[elt] <- 'White Non-Hispanic'
-  } else if (aids$raceth[elt] == 2) {
-    aids$raceth_text[elt] <- 'Black Non-Hispanic'
-  } else if (aids$raceth[elt] == 3) {
-    aids$raceth_text[elt] <- 'Hispanic'
-  } else if (aids$raceth[elt] == 4) {
-    aids$raceth_text[elt] <- 'Asian/Pacific Islander'
-  } else if (aids$raceth[elt] == 5) {
-    aids$raceth_text[elt] <- 'American Indian/Alaskan Native'
-  } else if (aids$raceth[elt] == 6) {
-    aids$raceth_text[elt] <- 'Other/Unknown'
-  }
-  
-  if (aids$ivdrug[elt] == 1) {
-    aids$ivdrug_text[elt] <- 'Never'
-  } else if (aids$ivdrug[elt] == 2) {
-    aids$ivdrug_text[elt] <- 'Currently'
-  } else if (aids$ivdrug[elt] == 3) {
-    aids$ivdrug_text[elt] <- 'Previously'
-  }
-  
-  if (aids$hemophil[elt] == 1) {
-    aids$hemophil_text[elt] <- 'Yes'
-  } else if (aids$hemophil[elt] == 0) {
-    aids$hemophil_text[elt] <- 'No'
-  }
-  
-  aids$demo_text[elt] <- (paste (aids$sex_text[elt], aids$raceth_text[elt], sep=', '))
-}
-```
 
 
-```r
-dfTab <- as.data.frame(table(aids$sex_text))
-colnames(dfTab)[1] <- "n"
-dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
-
-ggplot(aids, aes(x=sex_text, fill=sex_text)) + geom_bar( ) +
-  scale_fill_brewer(palette = "Set2") + labs(title = 'Sex Frequency', x = "Sex", y = "Count") + theme(legend.position = "none") + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=0, inherit.aes = FALSE)
-```
 
 ![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
-```r
-dfTab <- as.data.frame(table(aids$raceth_text))
-colnames(dfTab)[1] <- "n"
-dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
-
-ggplot(aids, aes(x=raceth_text, fill=raceth_text)) + geom_bar( ) +
-  scale_fill_brewer(palette = "Set2") + labs(title = 'Race/Ethnicity Frequency', x = "Race/Ethnicity", y = "Count") +  theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=0, inherit.aes = FALSE)
 ```
-
-![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-3-2.png)<!-- -->
-
-```r
-dfTab <- as.data.frame(table(aids$demo_text))
-colnames(dfTab)[1] <- "n"
-dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
-
-ggplot(aids, aes(x=demo_text, fill=demo_text)) + geom_bar( ) +
-  scale_fill_brewer(palette = "Set3") + labs(title = 'Sex and Race/Ethnicity Demographics', x = "Demographics", y = "Count") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position = "none") + geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=0, inherit.aes = FALSE)
+## 
+## 	Chi-squared test for given probabilities
+## 
+## data:  table(aids$sex_text)
+## X-squared = 399.4, df = 1, p-value < 2.2e-16
 ```
+From the p-value of 2.2e-16 in a chi-squared test of proportions, there is a statistically significant difference in the proportion of men enrolled in the study to women.
 
-![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-3-3.png)<!-- -->
-```
-
-```r
-ggplot(aids, aes(x=age)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
-  labs(title="Histogram for Age", x="Age", y="Count") + 
-  xlim(c(10,80)) + ylim(c(0,450))
-```
 
 ![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
+```
+## 
+## 	Chi-squared test for given probabilities
+## 
+## data:  table(aids$raceth_text)
+## X-squared = 780.7, df = 4, p-value < 2.2e-16
+```
+From the p-value of 2.2e-16 in a chi-squared test of proportions, there is a statistically significant difference in the proportion of race/ethnicity groups enrolled in the study.
 
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
+```
+## 
+## 	Chi-squared test for given probabilities
+## 
+## data:  table(aids$demo_text)
+## X-squared = 1440.1, df = 8, p-value < 2.2e-16
+```
+From the p-value of 2.2e-16 in a chi-squared test of proportions, there is a statistically significant difference in the proportion of gender+race/ethnicity groups enrolled in the study.
+
+
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
+```
+## Warning in chisq.test(aids$censor_text, aids$karnof): Chi-squared
+## approximation may be incorrect
+```
+
+```
+## 
+## 	Pearson's Chi-squared test
+## 
+## data:  aids$censor_text and aids$karnof
+## X-squared = 43.377, df = 3, p-value = 2.047e-09
+```
+
+The p-value of 2.047e-09 indicates that there is a significant difference in the proportion of individuals who develop AIDS or die across the different Karnofsky scale groups.
 
 ```r
-ggplot(aids %>% filter(txgrp == 1 & censor == 1), aes(x=time)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
-  labs(title="Histogram for txgrp1", x="Time to AIDS/Death", y="Count") + 
-  xlim(c(0,90)) + ylim(c(0,8))
+ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + geom_bar(stat='identity') +
+  scale_fill_brewer(palette = "Set3") + labs(title = 'Karnofsky Frequency', x = "Karnofsky Scale", y = "Count") +  theme(legend.position = "right") +  theme(legend.title=element_blank()) + geom_text(aes(x=dfTab$n, y=dfTab$Freq, label=dfTab$Freq), vjust=-0.3)
 ```
+
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
+
 
 ```
 ## Warning: Removed 27 rows containing non-finite values (stat_bin).
 ```
 
-![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
-
-```r
-ggplot(aids %>% filter(txgrp == 2 & censor == 1), aes(x=time)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 
-  labs(title="Histogram for txgrp2", x="Time to AIDS/Death", y="Count") + 
-  xlim(c(0,90)) + ylim(c(0,8))
-```
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 ```
 ## Warning: Removed 10 rows containing non-finite values (stat_bin).
 ```
 
-![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-5-2.png)<!-- -->
+![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-9-2.png)<!-- -->
 
-```r
-#subjects stratified by CD4
-table(aids$txgrp_text, aids$strat2_text)
-```
+CD4 Stratification and Treatment Group:
 
 ```
 ##          
@@ -187,64 +98,118 @@ table(aids$txgrp_text, aids$strat2_text)
 ##   Placebo       258      164
 ```
 
-```r
-#higher proportion of CD4>50 die
-table(aids$strat2_text, aids$censor_text)
 ```
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  aids$txgrp_text and aids$strat2_text
+## X-squared = 0.035935, df = 1, p-value = 0.8497
+```
+Subjects were eligible for the trial if their CD4 < 200 and had at least 3 months of prior zidovudine therapy. Randomization was stratified by CD4 cell count at the time of screening into groups of CD4 > 50 and CD4 <= 50. 50.8% of the CD4 <= 50 group recieved IDV while 49.8% of the CD4 > 50 group recieved IDV. The p-value of the chi-squared test of proportions  is very large (0.85), so there is no significant difference in the IDV and treatment proportions across the two CD4 groups.
 
-```
-##            
-##             AIDS/death Otherwise
-##   CD4 <= 50         21       503
-##   CD4 > 50          48       279
-```
 
-```r
-#lower proportion of AIDS/death with IDV
-table(aids$txgrp_text, aids$censor_text)
-```
 
-```
-##          
-##           AIDS/death Otherwise
-##   IDV             23       406
-##   Placebo         46       376
-```
-
-```r
-#lower proportion of death with IDV
-table(aids$txgrp_text, aids$censor_d_text)
-```
-
-```
-##          
-##           Death Otherwise
-##   IDV         6       423
-##   Placebo    14       408
-```
-
-```r
-#iv use and AIDS/death
-table(aids$ivdrug_text, aids$censor_text)
-```
+CD4 Stratification and AIDS/Death Outcome: 
 
 ```
 ##             
-##              AIDS/death Otherwise
-##   Currently           0         2
-##   Never              60       655
-##   Previously          9       125
-```
-
-```r
-#hemphilia and AIDS/death
-table(aids$hemophil_text, aids$censor_text)
+##              CD4 <= 50 CD4 > 50
+##   AIDS/death        21       48
+##   Otherwise        503      279
 ```
 
 ```
-##      
-##       AIDS/death Otherwise
-##   No          66       756
-##   Yes          3        26
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  aids$censor_text and aids$strat2_text
+## X-squared = 29.358, df = 1, p-value = 6.015e-08
+```
+4.0% of the CD4 <= 50 group and  14.7% of the CD4 > 50 group experienced AIDS/death. The p-value of the chi-squared test of proportions  is very small (6.015e-08), so there is a significant difference in the proportion of individuals that develop AIDS or die across the two CD4 groups.
+
+
+
+Treatment Group and AIDS/Death Outcome:
+
+```
+##             
+##              IDV Placebo
+##   AIDS/death  23      46
+##   Otherwise  406     376
 ```
 
+```
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  aids$censor_text and aids$txgrp_text
+## X-squared = 8.0329, df = 1, p-value = 0.004594
+```
+5.4% of the IDV group and 10.9% of the Placebo group experienced AIDS/Death. The p-value of the chi-squared test of proportions  is  small (0.004594), so there is a significant difference in the proportion of individuals that develop AIDS or die across the two treatment groups.
+
+
+Treatment Group and Death: 
+
+```
+##            
+##             IDV Placebo
+##   Death       6      14
+##   Otherwise 423     408
+```
+
+```
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  aids$censor_d_text and aids$txgrp_text
+## X-squared = 2.6285, df = 1, p-value = 0.105
+```
+1.4% of the IDV group and 3.3% of the Placebo group experienced death. The p-value of the chi-squared test of proportions  is  0.105, so we cannot conclude that there is a significant difference in the proportion of individuals that develop AIDS or die across the two treatment groups.
+
+
+IV Usage and AIDS/Death:
+
+```
+##             
+##              Currently Never Previously
+##   AIDS/death         0    60          9
+##   Otherwise          2   655        125
+```
+
+```
+## Warning in chisq.test(aids$censor_text, aids$ivdrug_text): Chi-squared
+## approximation may be incorrect
+```
+
+```
+## 
+## 	Pearson's Chi-squared test
+## 
+## data:  aids$censor_text and aids$ivdrug_text
+## X-squared = 0.60193, df = 2, p-value = 0.7401
+```
+The p-value of 0.7401 indicates that there is no significant difference in the proportion of individuals who develop AIDS or die across the different drug usage groups. 
+
+
+Hemophilia and AIDS/Death: 
+
+```
+##             
+##               No Yes
+##   AIDS/death  66   3
+##   Otherwise  756  26
+```
+
+```
+## Warning in chisq.test(aids$censor_text, aids$hemophil_text): Chi-squared
+## approximation may be incorrect
+```
+
+```
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  aids$censor_text and aids$hemophil_text
+## X-squared = 0.010587, df = 1, p-value = 0.918
+```
+The p-value of 0.918 indicates that there is no significant difference in the proportion of individuals who develop AIDS or die across the two hemophilia groups. 
