@@ -11,6 +11,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 aids <- read.csv("AIDSdata.csv")
 library(tidyverse)
+library(tidylog)
+library(broom)
 library(ggplot2)
 library(survival)
 library(survminer)
@@ -103,10 +105,76 @@ for (elt in 1:length(aids$id)) {
 
 ```{r}
 KM <- survfit(Surv(time, censor)~1, data=aids)
-survminer::ggsurvplot(KM, conf.int=TRUE, censor=F) + ggtitle("Overall Survival Curve")
+ggsurvplot(KM, conf.int=TRUE, censor=F) + ggtitle("Overall Survival Curve")
+ggsurvplot(KM, fun="cumhaz") + ggtitle("Cumulative Hazard Curve")
 ```
 ```{r}
-KM <- survfit(Surv(time, censor)~karnof, type="kaplan-meier", conf.type="log", data=aids)
-survminer::ggsurvplot(KM, conf.int=FALSE, censor=F) + ggtitle("Survival Curve by Karnofsky Scale")
+KM <- survfit(Surv(time, censor)~txgrp_text, type="kaplan-meier", conf.type="log", data=aids)
+ggsurvplot(KM, conf.int=TRUE, censor=F) + ggtitle("Survival Curve by Treatment")
+ggsurvplot(KM, fun="cumhaz") + ggtitle("Cumulative Hazard Curve by Treatment")
+```
+
+```{r}
+covariates <- c("txgrp", "sex",  "raceth", "ivdrug", "hemophil", "karnof", "cd4", "priorzdv", "age")
+univ_formulas <- sapply(covariates,
+                        function(x) as.formula(paste('Surv(time, censor)~', x)))
+univ_models <- lapply( univ_formulas, function(x){coxph(x, data = aids)})
+# Extract data 
+univ_results <- lapply(univ_models,
+                       function(x){ 
+                          x <- summary(x)
+                          p.value<-signif(x$wald["pvalue"], digits=2)
+                          wald.test<-signif(x$wald["test"], digits=2)
+                          beta<-signif(x$coef[1], digits=2);#coeficient beta
+                          HR <-signif(x$coef[2], digits=2);#exp(beta)
+                          HR.confint.lower <- signif(x$conf.int[,"lower .95"], 2)
+                          HR.confint.upper <- signif(x$conf.int[,"upper .95"],2)
+                          HR <- paste0(HR, " (", 
+                                       HR.confint.lower, "-", HR.confint.upper, ")")
+                          res<-c(beta, HR, wald.test, p.value)
+                          names(res)<-c("beta", "HR (95% CI for HR)", "wald.test", 
+                                        "p.value")
+                          return(res)
+                          #return(exp(cbind(coef(x),confint(x))))
+                         })
+res <- t(as.data.frame(univ_results, check.names = FALSE))
+as.data.frame(res)
+```
+The individual covariates txgrp, karnof, and cd4 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, age, ivdrug, prior zdv, sex, hemophil and raceth. A multivariate model will be fit with the three significant covariates. 
+```{r}
+cox <- coxph(Surv(time,censor) ~ txgrp, data = aids)
+summary(cox)
+pchisq((-2*cox$loglik[1])-(-2*cox$loglik[2]), d=1, lower.tail = FALSE)
+```
+The LRT for adding in txgrp as a variable results in a p-value of 0.002, so it is included in the model. 
+
+```{r}
+cox1 <- coxph(Surv(time,censor) ~ txgrp + karnof, data = aids)
+#summary(cox1)
+#cox1 %>% tidy()
+pchisq((-2*cox$loglik[2])-(-2*cox1$loglik[2]), d=1, lower.tail = FALSE)
+```
+The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model. 
+
+```{r}
+cox2 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4, data = aids)
+summary(cox2)
+cox2 %>% tidy()
+pchisq((-2*cox1$loglik[2])-(-2*cox2$loglik[2]), d=1, lower.tail = FALSE)
+```
+The LRT for adding in cd4 as a variable results in a p-value of 7.403133e-09, so it is included in the model. 
+
+```{r}
+cox3 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4 + age, data = aids)
+summary(cox3)
+cox3 %>% tidy()
+pchisq((-2*cox2$loglik[2])-(-2*cox3$loglik[2]), d=1, lower.tail = FALSE)
+```
+The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. Cox2 is the best model using forward selection. 
+
+```{r}
+ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal()) + ggtitle ("Survival Curve")
+ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal(), fun="cumhaz") + ggtitle("Cumulative Hazard Curve")
+
 ```
 
