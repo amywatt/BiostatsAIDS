@@ -30,6 +30,18 @@ aids$hemophil_text <- NA
 
 aids$demo <- NA
 aids$demo_text <- NA
+
+#Adding a new column to split cd4 into factors
+aids <- aids %>% 
+  mutate(cd4f = ifelse(cd4 <= 50, "under50", 
+                             ifelse(cd4 <=100, "50-100",
+                                    ifelse(cd4 <= 150, "100-150",
+                                           ifelse(cd4 <=200, "150-200",
+                                                 ifelse(cd4 <=250, "200-250",
+                                                        ifelse(cd4 <=300, "250-300",
+                                                               ifelse(cd4<=350, "300-350", "over350")))))))) %>%
+  mutate(cd4f = factor(cd4f,
+                       levels = c("under50", "50-100", "100-150","150-200", "200-250","250-300","300-350")))
 ```
 
 ```{r, echo=FALSE}
@@ -158,6 +170,25 @@ ggplot(aids, aes(x=age)) + geom_histogram(breaks=seq(10, 80, by=5), col='black',
   xlim(c(10,80)) + ylim(c(0,450))
 ```
 
+```{r, echo=FALSE}
+ggplot(aids, aes(x=cd4)) + geom_histogram(breaks=seq(0, 350, by=5), col='black', fill='turquoise') + 
+  labs(title="Histogram for cd4", x="cd4", y="Count") + 
+  xlim(c(0,350)) + ylim(c(0,60))
+```
+The largest cd4 in the study is 348. The CDC states that any cd4 under 200 clinically defines HIV, and cd4 over 500 is considered healthy. Initially, when infected with HIV, cd4 count typically drops to around 500 and tends to decline as the disease progresses. The risk of aids double for every 100 cells/mm^3 drop in cd4, but since all patients are well below the 500 cd4 marker, cd4 will be split into 50 cells/mm^3 categories.
+
+```{r, echo=FALSE}
+dfTab <- as.data.frame(table(aids$cd4f, aids$censor_text))
+colnames(dfTab)[1] <- "n"
+colnames(dfTab)[2] <- "censor_text"
+dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
+
+ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + geom_bar(stat='identity') +
+  scale_fill_brewer(palette = "Set3") + labs(title = 'CD4 Frequency', x = "CD4", y = "Count") +  theme(legend.position = "right") +  theme(legend.title=element_blank()) + geom_text(aes(x=dfTab$n, y=dfTab$Freq, label=dfTab$Freq), position = position_stack(vjust = 0.5))
+
+chisq.test(aids$censor_text, aids$cd4f)
+```
+The p-value of 9.129e-08 indicates that there is a significant difference in the proportion of individuals who develop AIDS or die across the different cd4 factor groups.
 
 ```{r, echo=FALSE}
 ggplot(aids %>% filter(txgrp == 1 & censor == 1), aes(x=time)) + geom_histogram(breaks=seq(10, 80, by=5), col='black', fill='turquoise') + 

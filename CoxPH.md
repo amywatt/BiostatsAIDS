@@ -13,6 +13,11 @@ output:
 
 
 
+Investigation of the proportional hazards assumption (what does the R function cox.zph do?).
+
+Investigating the proportional hazards assumption relates to the survival analysis because the Cox PH model technical conditions include the proportional hazards assumption. If the assumption does not hold, the model could be inaccurate. The resources I plan to use to investigate the assumption include R documentation of the cox.zph function, and understanding what the function is doing to calculate the p-values of the covariates. 
+
+
 
 ```r
 KM <- survfit(Surv(time, censor)~1, data=aids)
@@ -84,28 +89,14 @@ The individual covariates txgrp, karnof, and cd4 have significant correlation co
 
 ```r
 cox <- coxph(Surv(time,censor) ~ txgrp, data = aids)
-summary(cox)
+cox %>% tidy()
 ```
 
 ```
-## Call:
-## coxph(formula = Surv(time, censor) ~ txgrp, data = aids)
-## 
-##   n= 851, number of events= 69 
-## 
-##          coef exp(coef) se(coef)      z Pr(>|z|)   
-## txgrp -0.7622    0.4666   0.2554 -2.984  0.00284 **
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-##       exp(coef) exp(-coef) lower .95 upper .95
-## txgrp    0.4666      2.143    0.2828    0.7698
-## 
-## Concordance= 0.591  (se = 0.029 )
-## Rsquare= 0.011   (max possible= 0.655 )
-## Likelihood ratio test= 9.48  on 1 df,   p=0.002
-## Wald test            = 8.91  on 1 df,   p=0.003
-## Score (logrank) test = 9.34  on 1 df,   p=0.002
+## # A tibble: 1 x 7
+##   term  estimate std.error statistic p.value conf.low conf.high
+##   <chr>    <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl>
+## 1 txgrp   -0.762     0.255     -2.98 0.00284    -1.26    -0.262
 ```
 
 ```r
@@ -120,48 +111,29 @@ The LRT for adding in txgrp as a variable results in a p-value of 0.002, so it i
 
 ```r
 cox1 <- coxph(Surv(time,censor) ~ txgrp + karnof, data = aids)
-#summary(cox1)
-#cox1 %>% tidy()
+cox1 %>% tidy()
+```
+
+```
+## # A tibble: 2 x 7
+##   term   estimate std.error statistic       p.value conf.low conf.high
+##   <chr>     <dbl>     <dbl>     <dbl>         <dbl>    <dbl>     <dbl>
+## 1 txgrp   -0.797     0.255      -3.12 0.00181         -1.30    -0.296 
+## 2 karnof  -0.0805    0.0137     -5.89 0.00000000396   -0.107   -0.0537
+```
+
+```r
 pchisq((-2*cox$loglik[2])-(-2*cox1$loglik[2]), d=1, lower.tail = FALSE)
 ```
 
 ```
 ## [1] 1.320752e-08
 ```
-The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model. 
+The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model.
 
 
 ```r
 cox2 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4, data = aids)
-summary(cox2)
-```
-
-```
-## Call:
-## coxph(formula = Surv(time, censor) ~ txgrp + karnof + cd4, data = aids)
-## 
-##   n= 851, number of events= 69 
-## 
-##             coef exp(coef)  se(coef)      z Pr(>|z|)    
-## txgrp  -0.680710  0.506258  0.256155 -2.657  0.00787 ** 
-## karnof -0.057422  0.944195  0.013804 -4.160 3.18e-05 ***
-## cd4    -0.014622  0.985485  0.003074 -4.757 1.97e-06 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-##        exp(coef) exp(-coef) lower .95 upper .95
-## txgrp     0.5063      1.975    0.3064    0.8364
-## karnof    0.9442      1.059    0.9190    0.9701
-## cd4       0.9855      1.015    0.9796    0.9914
-## 
-## Concordance= 0.791  (se = 0.026 )
-## Rsquare= 0.085   (max possible= 0.655 )
-## Likelihood ratio test= 75.21  on 3 df,   p=3e-16
-## Wald test            = 61.56  on 3 df,   p=3e-13
-## Score (logrank) test = 71.72  on 3 df,   p=2e-15
-```
-
-```r
 cox2 %>% tidy()
 ```
 
@@ -186,38 +158,6 @@ The LRT for adding in cd4 as a variable results in a p-value of 7.403133e-09, so
 
 ```r
 cox3 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4 + age, data = aids)
-summary(cox3)
-```
-
-```
-## Call:
-## coxph(formula = Surv(time, censor) ~ txgrp + karnof + cd4 + age, 
-##     data = aids)
-## 
-##   n= 851, number of events= 69 
-## 
-##             coef exp(coef)  se(coef)      z Pr(>|z|)    
-## txgrp  -0.697081  0.498037  0.256341 -2.719  0.00654 ** 
-## karnof -0.055892  0.945641  0.013894 -4.023 5.75e-05 ***
-## cd4    -0.015127  0.984987  0.003128 -4.836 1.32e-06 ***
-## age     0.021280  1.021508  0.013809  1.541  0.12331    
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-##        exp(coef) exp(-coef) lower .95 upper .95
-## txgrp     0.4980     2.0079    0.3013    0.8231
-## karnof    0.9456     1.0575    0.9202    0.9717
-## cd4       0.9850     1.0152    0.9790    0.9910
-## age       1.0215     0.9789    0.9942    1.0495
-## 
-## Concordance= 0.792  (se = 0.026 )
-## Rsquare= 0.087   (max possible= 0.655 )
-## Likelihood ratio test= 77.51  on 4 df,   p=6e-16
-## Wald test            = 61.94  on 4 df,   p=1e-12
-## Score (logrank) test = 72.69  on 4 df,   p=6e-15
-```
-
-```r
 cox3 %>% tidy()
 ```
 
@@ -238,18 +178,200 @@ pchisq((-2*cox2$loglik[2])-(-2*cox3$loglik[2]), d=1, lower.tail = FALSE)
 ```
 ## [1] 0.1295928
 ```
-The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. Cox2 is the best model using forward selection. 
+The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. Cox2 is the best model using forward selection. Next, I will create a model where cd4 is split into factors to see if it shoud be a categorical or continuous variable. 
 
+
+```r
+cox4 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4f, data = aids)
+cox4 %>% tidy()
+```
+
+```
+## # A tibble: 6 x 7
+##   term        estimate std.error statistic    p.value conf.low conf.high
+##   <chr>          <dbl>     <dbl>     <dbl>      <dbl>    <dbl>     <dbl>
+## 1 txgrp        -0.694     0.256      -2.72 0.00662     -1.20     -0.193 
+## 2 karnof       -0.0625    0.0138     -4.52 0.00000608  -0.0896   -0.0354
+## 3 cd4f50-100   -0.310     0.298      -1.04 0.299       -0.895     0.275 
+## 4 cd4f100-150  -2.94      1.01       -2.90 0.00368     -4.92     -0.956 
+## 5 cd4f150-200  -2.39      1.01       -2.36 0.0181      -4.38     -0.409 
+## 6 cd4fover200  -1.90      1.01       -1.87 0.0609      -3.89      0.0866
+```
+
+```r
+pchisq((-2*cox1$loglik[2])-(-2*cox4$loglik[2]), d=6, lower.tail = FALSE)
+```
+
+```
+## [1] 2.559148e-06
+```
+The p-value of 2.559148e-06 shows that the cd4 categories should be included in the model. Now, I will consider interaction between cd4f and the other two variables. 
+
+
+```r
+-1.89993881--2.39426985
+```
+
+```
+## [1] 0.494331
+```
+
+```r
+-2.39426985--2.93830829
+```
+
+```
+## [1] 0.5440384
+```
+
+```r
+-2.93830829--0.31005778
+```
+
+```
+## [1] -2.628251
+```
+The log(HR) will be linear in cd4 if it should be linear. Thus, $e^{b_2}/e^{b_1}=e^{b_3}/e^{b_2}=e^{b_4}/e^{b_3}$, so $b_2-b_1=b_3-b_2=b_4-b_3$. because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the lowest to the next lowest cd4 group is -2.628251 as compared to around 0.5, so cd4 should be kept as factors. Next, I will create models with interaction. 
+
+
+```r
+cox5 <- coxph(Surv(time,censor) ~ txgrp + karnof*cd4f, data = aids)
+```
+
+```
+## Warning in fitter(X, Y, strats, offset, init, control, weights = weights, :
+## Loglik converged before variable 4,5,8,9 ; beta may be infinite.
+```
+
+```r
+cox5 %>% tidy()
+```
+
+```
+## # A tibble: 10 x 7
+##    term          estimate std.error statistic   p.value  conf.low conf.high
+##    <chr>            <dbl>     <dbl>     <dbl>     <dbl>     <dbl>     <dbl>
+##  1 txgrp          -0.661    2.56e-1  -2.58      9.91e-3   -1.16     -0.159 
+##  2 karnof         -0.0762   1.54e-2  -4.94      7.69e-7   -0.106    -0.0460
+##  3 cd4f50-100     -5.59     3.46e+0  -1.62      1.06e-1  -12.4       1.19  
+##  4 cd4f100-150  -170.       2.86e+4  -0.00596   9.95e-1 -Inf       Inf     
+##  5 cd4f150-200  -176.       3.99e+4  -0.00442   9.96e-1 -Inf       Inf     
+##  6 cd4fover200    -0.611    1.37e+1  -0.0448    9.64e-1  -27.4      26.2   
+##  7 karnof:cd4f…    0.0595   3.82e-2   1.56      1.20e-1   -0.0155    0.134 
+##  8 karnof:cd4f…    1.69     2.86e+2   0.00592   9.95e-1 -558.      562.    
+##  9 karnof:cd4f…    1.76     3.99e+2   0.00440   9.96e-1 -Inf       Inf     
+## 10 karnof:cd4f…   -0.0133   1.51e-1  -0.0880    9.30e-1   -0.310     0.284
+```
+
+```r
+pchisq((-2*cox4$loglik[2])-(-2*cox5$loglik[2]), d=6, lower.tail = FALSE)
+```
+
+```
+## [1] 0.2164783
+```
+The p-value of 0.2164783 indicates that interaction between karnof and cd4f is not necessary in the model. 
+
+
+```r
+cox6 <- coxph(Surv(time,censor) ~ txgrp*cd4f + karnof + cd4f, data = aids)
+```
+
+```
+## Warning in fitter(X, Y, strats, offset, init, control, weights = weights, :
+## Loglik converged before variable 3,4,5,8,9,10 ; beta may be infinite.
+```
+
+```r
+cox6 %>% tidy()
+```
+
+```
+## # A tibble: 10 x 7
+##    term          estimate  std.error statistic  p.value  conf.low conf.high
+##    <chr>            <dbl>      <dbl>     <dbl>    <dbl>     <dbl>     <dbl>
+##  1 txgrp          -0.664      0.298   -2.23     2.57e-2   -1.25     -0.0805
+##  2 cd4f50-100      0.199      0.894    0.222    8.24e-1   -1.55      1.95  
+##  3 cd4f100-150   -36.2     8547.      -0.00423  9.97e-1 -Inf       Inf     
+##  4 cd4f150-200    14.8     4988.       0.00296  9.98e-1 -Inf       Inf     
+##  5 cd4fover200   -37.2    14236.      -0.00262  9.98e-1 -Inf       Inf     
+##  6 karnof         -0.0622     0.0138  -4.49     7.08e-6   -0.0893   -0.0351
+##  7 txgrp:cd4f50…  -0.391      0.656   -0.595    5.52e-1   -1.68      0.895 
+##  8 txgrp:cd4f10…  17.0     4273.       0.00399  9.97e-1 -Inf       Inf     
+##  9 txgrp:cd4f15… -16.6     4988.      -0.00334  9.97e-1 -Inf       Inf     
+## 10 txgrp:cd4fov…  18.1     7118.       0.00254  9.98e-1 -Inf       Inf
+```
+
+```r
+pchisq((-2*cox4$loglik[2])-(-2*cox6$loglik[2]), d=6, lower.tail = FALSE)
+```
+
+```
+## [1] 0.5398977
+```
+The p-value of 0.5398977 indicates that interaction between txgrp and cd4 is not needed in the model. 
 
 ```r
 ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal()) + ggtitle ("Survival Curve")
 ```
 
-![](CoxPH_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](CoxPH_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 ```r
 ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal(), fun="cumhaz") + ggtitle("Cumulative Hazard Curve")
 ```
 
-![](CoxPH_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
+![](CoxPH_files/figure-html/unnamed-chunk-14-2.png)<!-- -->
 
+
+```r
+cox_interaction <- coxph(Surv(time,censor) ~ txgrp*karnof, data = aids)
+summary(cox_interaction)
+```
+
+```
+## Call:
+## coxph(formula = Surv(time, censor) ~ txgrp * karnof, data = aids)
+## 
+##   n= 851, number of events= 69 
+## 
+##                    coef  exp(coef)   se(coef)      z Pr(>|z|)  
+## txgrp        -0.7223403  0.4856144  2.5956003 -0.278   0.7808  
+## karnof       -0.0793415  0.9237244  0.0411531 -1.928   0.0539 .
+## txgrp:karnof -0.0008664  0.9991340  0.0300041 -0.029   0.9770  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+##              exp(coef) exp(-coef) lower .95 upper .95
+## txgrp           0.4856      2.059  0.002999    78.645
+## karnof          0.9237      1.083  0.852144     1.001
+## txgrp:karnof    0.9991      1.001  0.942072     1.060
+## 
+## Concordance= 0.694  (se = 0.034 )
+## Rsquare= 0.048   (max possible= 0.655 )
+## Likelihood ratio test= 41.78  on 3 df,   p=4e-09
+## Wald test            = 44.35  on 3 df,   p=1e-09
+## Score (logrank) test = 51.76  on 3 df,   p=3e-11
+```
+
+```r
+cox_interaction %>% tidy()
+```
+
+```
+## # A tibble: 3 x 7
+##   term          estimate std.error statistic p.value conf.low conf.high
+##   <chr>            <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl>
+## 1 txgrp        -0.722       2.60     -0.278   0.781   -5.81     4.36   
+## 2 karnof       -0.0793      0.0412   -1.93    0.0539  -0.160    0.00132
+## 3 txgrp:karnof -0.000866    0.0300   -0.0289  0.977   -0.0597   0.0579
+```
+
+```r
+pchisq((-2*cox1$loglik[2])-(-2*cox_interaction$loglik[2]), d=1, lower.tail = FALSE)
+```
+
+```
+## [1] 0.9769654
+```
+The liklihood ratio test gives a p-value of 0.9769654, so interaction between karnof and cd4 shoud not be in the model. 

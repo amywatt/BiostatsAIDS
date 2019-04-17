@@ -33,6 +33,15 @@ aids$hemophil_text <- NA
 
 aids$demo <- NA
 aids$demo_text <- NA
+
+#Adding a new column to split cd4 into factors
+aids <- aids %>% 
+  mutate(cd4f = ifelse(cd4 <= 50, "under50", 
+                             ifelse(cd4 <=100, "50-100",
+                                    ifelse(cd4 <= 150, "100-150",
+                                           ifelse(cd4 <=200, "150-200", "over200"))))) %>%
+  mutate(cd4f = factor(cd4f,
+                       levels = c("under50", "50-100", "100-150","150-200", "over200")))
 ```
 
 ```{r, echo=FALSE}
@@ -103,6 +112,11 @@ for (elt in 1:length(aids$id)) {
 }
 ```  
 
+Investigation of the proportional hazards assumption (what does the R function cox.zph do?).
+
+Investigating the proportional hazards assumption relates to the survival analysis because the Cox PH model technical conditions include the proportional hazards assumption. If the assumption does not hold, the model could be inaccurate. The resources I plan to use to investigate the assumption include R documentation of the cox.zph function, and understanding what the function is doing to calculate the p-values of the covariates. 
+
+
 ```{r}
 KM <- survfit(Surv(time, censor)~1, data=aids)
 ggsurvplot(KM, conf.int=TRUE, censor=F) + ggtitle("Overall Survival Curve")
@@ -143,22 +157,20 @@ as.data.frame(res)
 The individual covariates txgrp, karnof, and cd4 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, age, ivdrug, prior zdv, sex, hemophil and raceth. A multivariate model will be fit with the three significant covariates. 
 ```{r}
 cox <- coxph(Surv(time,censor) ~ txgrp, data = aids)
-summary(cox)
+cox %>% tidy()
 pchisq((-2*cox$loglik[1])-(-2*cox$loglik[2]), d=1, lower.tail = FALSE)
 ```
 The LRT for adding in txgrp as a variable results in a p-value of 0.002, so it is included in the model. 
 
 ```{r}
 cox1 <- coxph(Surv(time,censor) ~ txgrp + karnof, data = aids)
-#summary(cox1)
-#cox1 %>% tidy()
+cox1 %>% tidy()
 pchisq((-2*cox$loglik[2])-(-2*cox1$loglik[2]), d=1, lower.tail = FALSE)
 ```
-The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model. 
+The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model.
 
 ```{r}
 cox2 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4, data = aids)
-summary(cox2)
 cox2 %>% tidy()
 pchisq((-2*cox1$loglik[2])-(-2*cox2$loglik[2]), d=1, lower.tail = FALSE)
 ```
@@ -166,15 +178,39 @@ The LRT for adding in cd4 as a variable results in a p-value of 7.403133e-09, so
 
 ```{r}
 cox3 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4 + age, data = aids)
-summary(cox3)
 cox3 %>% tidy()
 pchisq((-2*cox2$loglik[2])-(-2*cox3$loglik[2]), d=1, lower.tail = FALSE)
 ```
-The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. Cox2 is the best model using forward selection. 
+The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. Cox2 is the best model using forward selection. Next, I will create a model where cd4 is split into factors to see if it shoud be a categorical or continuous variable. 
 
+```{r}
+cox4 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4f, data = aids)
+cox4 %>% tidy()
+pchisq((-2*cox1$loglik[2])-(-2*cox4$loglik[2]), d=6, lower.tail = FALSE)
+```
+The p-value of 2.559148e-06 shows that the cd4 categories should be included in the model. Now, I will consider interaction between cd4f and the other two variables. 
+
+```{r}
+-1.89993881--2.39426985
+-2.39426985--2.93830829
+-2.93830829--0.31005778
+```
+The log(HR) will be linear in cd4 if it should be linear. Thus, $e^{b_2}/e^{b_1}=e^{b_3}/e^{b_2}=e^{b_4}/e^{b_3}$, so $b_2-b_1=b_3-b_2=b_4-b_3$. because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the lowest to the next lowest cd4 group is -2.628251 as compared to around 0.5, so cd4 should be kept as factors. Next, I will create models with interaction. 
+
+```{r}
+cox5 <- coxph(Surv(time,censor) ~ txgrp + karnof*cd4f, data = aids)
+cox5 %>% tidy()
+pchisq((-2*cox4$loglik[2])-(-2*cox5$loglik[2]), d=6, lower.tail = FALSE)
+```
+The p-value of 0.2164783 indicates that interaction between karnof and cd4f is not necessary in the model. 
+
+```{r}
+cox6 <- coxph(Surv(time,censor) ~ txgrp*cd4f + karnof + cd4f, data = aids)
+cox6 %>% tidy()
+pchisq((-2*cox4$loglik[2])-(-2*cox6$loglik[2]), d=6, lower.tail = FALSE)
+```
+The p-value of 0.5398977 indicates that interaction between txgrp and cd4 is not needed in the model. 
 ```{r}
 ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal()) + ggtitle ("Survival Curve")
 ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal(), fun="cumhaz") + ggtitle("Cumulative Hazard Curve")
-
 ```
-
