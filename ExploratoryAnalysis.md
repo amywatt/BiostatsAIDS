@@ -73,16 +73,11 @@ The largest cd4 in the study is 348. The CDC states that any cd4 under 200 clini
 ![](ExploratoryAnalysis_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 ```
-## Warning in chisq.test(aids$censor_text, aids$cd4f): Chi-squared
-## approximation may be incorrect
-```
-
-```
 ## 
 ## 	Pearson's Chi-squared test
 ## 
 ## data:  aids$censor_text and aids$cd4f
-## X-squared = 43.538, df = 6, p-value = 9.129e-08
+## X-squared = 43.484, df = 4, p-value = 8.21e-09
 ```
 The p-value of 9.129e-08 indicates that there is a significant difference in the proportion of individuals who develop AIDS or die across the different cd4 factor groups.
 
