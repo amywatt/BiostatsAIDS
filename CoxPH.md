@@ -13,65 +13,22 @@ output:
 
 
 
+
+
+
 Investigation of the proportional hazards assumption (what does the R function cox.zph do?).
 
 Investigating the proportional hazards assumption relates to the survival analysis because the Cox PH model technical conditions include the proportional hazards assumption. If the assumption does not hold, the model could be inaccurate. The resources I plan to use to investigate the assumption include R documentation of the cox.zph function, and understanding what the function is doing to calculate the p-values of the covariates. 
 
+why lrt doesn't work and how to deal with it. 
 
 
-```r
-KM <- survfit(Surv(time, censor)~1, data=aids)
-ggsurvplot(KM, conf.int=TRUE, censor=F) + ggtitle("Overall Survival Curve")
-```
-
-![](CoxPH_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
-
-```r
-ggsurvplot(KM, fun="cumhaz") + ggtitle("Cumulative Hazard Curve")
-```
-
-![](CoxPH_files/figure-html/unnamed-chunk-3-2.png)<!-- -->
-
-```r
-KM <- survfit(Surv(time, censor)~txgrp_text, type="kaplan-meier", conf.type="log", data=aids)
-ggsurvplot(KM, conf.int=TRUE, censor=F) + ggtitle("Survival Curve by Treatment")
-```
-
-![](CoxPH_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
-
-```r
-ggsurvplot(KM, fun="cumhaz") + ggtitle("Cumulative Hazard Curve by Treatment")
-```
-
-![](CoxPH_files/figure-html/unnamed-chunk-4-2.png)<!-- -->
+![](CoxPH_files/figure-html/unnamed-chunk-5-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-2.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-3.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-4.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-5.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-6.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-7.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-8.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-9.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-10.png)<!-- -->
+Because the complimentary log log curves do not cross, the proportional hazards assumption holds for different treatment groups. 
 
 
-```r
-covariates <- c("txgrp", "sex",  "raceth", "ivdrug", "hemophil", "karnof", "cd4", "priorzdv", "age")
-univ_formulas <- sapply(covariates,
-                        function(x) as.formula(paste('Surv(time, censor)~', x)))
-univ_models <- lapply( univ_formulas, function(x){coxph(x, data = aids)})
-# Extract data 
-univ_results <- lapply(univ_models,
-                       function(x){ 
-                          x <- summary(x)
-                          p.value<-signif(x$wald["pvalue"], digits=2)
-                          wald.test<-signif(x$wald["test"], digits=2)
-                          beta<-signif(x$coef[1], digits=2);#coeficient beta
-                          HR <-signif(x$coef[2], digits=2);#exp(beta)
-                          HR.confint.lower <- signif(x$conf.int[,"lower .95"], 2)
-                          HR.confint.upper <- signif(x$conf.int[,"upper .95"],2)
-                          HR <- paste0(HR, " (", 
-                                       HR.confint.lower, "-", HR.confint.upper, ")")
-                          res<-c(beta, HR, wald.test, p.value)
-                          names(res)<-c("beta", "HR (95% CI for HR)", "wald.test", 
-                                        "p.value")
-                          return(res)
-                          #return(exp(cbind(coef(x),confint(x))))
-                         })
-res <- t(as.data.frame(univ_results, check.names = FALSE))
-as.data.frame(res)
-```
+![](CoxPH_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-6-2.png)<!-- -->
+
 
 ```
 ##             beta HR (95% CI for HR) wald.test p.value
@@ -315,63 +272,10 @@ The p-value of 0.5398977 indicates that interaction between txgrp and cd4 is not
 ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal()) + ggtitle ("Survival Curve")
 ```
 
-![](CoxPH_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](CoxPH_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 ```r
 ggsurvplot(survfit(cox2), data=aids, ggtheme = theme_minimal(), fun="cumhaz") + ggtitle("Cumulative Hazard Curve")
 ```
 
-![](CoxPH_files/figure-html/unnamed-chunk-14-2.png)<!-- -->
-
-
-```r
-cox_interaction <- coxph(Surv(time,censor) ~ txgrp*karnof, data = aids)
-summary(cox_interaction)
-```
-
-```
-## Call:
-## coxph(formula = Surv(time, censor) ~ txgrp * karnof, data = aids)
-## 
-##   n= 851, number of events= 69 
-## 
-##                    coef  exp(coef)   se(coef)      z Pr(>|z|)  
-## txgrp        -0.7223403  0.4856144  2.5956003 -0.278   0.7808  
-## karnof       -0.0793415  0.9237244  0.0411531 -1.928   0.0539 .
-## txgrp:karnof -0.0008664  0.9991340  0.0300041 -0.029   0.9770  
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-##              exp(coef) exp(-coef) lower .95 upper .95
-## txgrp           0.4856      2.059  0.002999    78.645
-## karnof          0.9237      1.083  0.852144     1.001
-## txgrp:karnof    0.9991      1.001  0.942072     1.060
-## 
-## Concordance= 0.694  (se = 0.034 )
-## Rsquare= 0.048   (max possible= 0.655 )
-## Likelihood ratio test= 41.78  on 3 df,   p=4e-09
-## Wald test            = 44.35  on 3 df,   p=1e-09
-## Score (logrank) test = 51.76  on 3 df,   p=3e-11
-```
-
-```r
-cox_interaction %>% tidy()
-```
-
-```
-## # A tibble: 3 x 7
-##   term          estimate std.error statistic p.value conf.low conf.high
-##   <chr>            <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl>
-## 1 txgrp        -0.722       2.60     -0.278   0.781   -5.81     4.36   
-## 2 karnof       -0.0793      0.0412   -1.93    0.0539  -0.160    0.00132
-## 3 txgrp:karnof -0.000866    0.0300   -0.0289  0.977   -0.0597   0.0579
-```
-
-```r
-pchisq((-2*cox1$loglik[2])-(-2*cox_interaction$loglik[2]), d=1, lower.tail = FALSE)
-```
-
-```
-## [1] 0.9769654
-```
-The liklihood ratio test gives a p-value of 0.9769654, so interaction between karnof and cd4 shoud not be in the model. 
+![](CoxPH_files/figure-html/unnamed-chunk-16-2.png)<!-- -->
