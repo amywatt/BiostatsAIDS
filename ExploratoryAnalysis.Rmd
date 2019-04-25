@@ -66,9 +66,9 @@ for (elt in 1:length(aids$id)) {
   }
   
   if (aids$strat2[elt] == 1) {
-    aids$strat2_text[elt] <- 'CD4 <= 50'
-  } else {
     aids$strat2_text[elt] <- 'CD4 > 50'
+  } else {
+    aids$strat2_text[elt] <- 'CD4 <= 50'
   }
   
   if (aids$sex[elt] == 1) {

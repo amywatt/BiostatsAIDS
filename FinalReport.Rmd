@@ -1,0 +1,41 @@
+---
+title: "Building a Cox Proportional Hazards Model for AIDS Survival Analysis"
+author: "Amy Watt"
+date: "4/24/2019"
+output:
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+aids <- read.csv("AIDSdata.csv")
+library(tidyverse)
+library(tidylog)
+library(broom)
+library(ggplot2)
+library(survival)
+library(survminer)
+library(grid)
+```
+
+```{r, echo=FALSE}
+#Adding a new column to split cd4 into factors
+aids <- aids %>% 
+  mutate(cd4f = ifelse(cd4 <= 50, "under50", 
+                             ifelse(cd4 <=100, "50-100",
+                                    ifelse(cd4 <= 150, "100-150",
+                                           ifelse(cd4 <=200, "150-200", "over200"))))) %>%
+  mutate(cd4f = factor(cd4f,
+                       levels = c("under50", "50-100", "100-150","150-200", "over200")))
+```
+
+Introduction
+
+Methods
+
+Results (Models & New Ideas)
+
+Discussion
+
+References 

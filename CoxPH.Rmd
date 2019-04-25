@@ -70,9 +70,9 @@ for (elt in 1:length(aids$id)) {
   }
   
   if (aids$strat2[elt] == 1) {
-    aids$strat2_text[elt] <- 'CD4 <= 50'
-  } else {
     aids$strat2_text[elt] <- 'CD4 > 50'
+  } else {
+    aids$strat2_text[elt] <- 'CD4 <= 50'
   }
   
   if (aids$sex[elt] == 1) {
@@ -132,11 +132,21 @@ main=expression(paste(hat(h),(t)[KM])))
 } 
 ```
 
-The Cox Proportional Hazards model describes the relationship between survival of an individual based on one or more explanatory variables (covariates). Thus, it can help estimate the effectiveness of treatment on survival, and can provide an estimate of the hazard function (the liklihood of the event occuring at any given point in time) based on the covariates. I will select explanatory variables from the AIDS study to build a Cox model to predict survival information related to the significant explanatory variables, as well as to construct an estimates of the hazard function to predict the liklihood of an individual experiencing AIDS diagnosis or death. The Cox model relies on the assumption that there are proportional hazards (the ratio of hazards for any two individuals is constant over time). This is because the Cox model is built on the following: $h_i(t) = h_0(t)e^{\beta x_i}$. Then, the hazard ratio for individuals $i$ and $j$ is $\frac{h_0(t)e^{\beta x_i}}{h_0(t)e^{\beta x_j}}=e^{\beta(x_i-x_j)}$, so there are proportional hazards for any two individuals, independent of time. Additionally, $e^{\beta_k}$ can be interpreted as the hazard ratio associated with a one unit increase in covariate $k$. Because the Cox model is build upon a proportional hazards assumption, it is important to investigate and test whether there are proportional hazards in a proposed model. 
+The Cox Proportional Hazards model describes the relationship between survival of an individual based on one or more explanatory variables (covariates). Thus, it can help estimate the effectiveness of treatment on survival, and can provide an estimate of the hazard function (the liklihood of the event occuring at any given point in time) based on the covariates. I will select explanatory variables from the AIDS study to build a Cox model to predict survival information related to the significant explanatory variables, as well as to construct an estimates of the hazard function to predict the liklihood of an individual experiencing AIDS diagnosis or death. The Cox model relies on the assumption that there are proportional hazards (the ratio of hazards for any two individuals is constant over time). This is because the Cox model is built on the following: $h_i(t) = h_0(t)e^{\beta x_i}$ for the $i$th individual. Then, the hazard ratio for individuals $i$ and $j$ is $\frac{h_0(t)e^{\beta x_i}}{h_0(t)e^{\beta x_j}}=e^{\beta(x_i-x_j)}$, so there are proportional hazards for any two individuals, independent of time. Additionally, $e^{\beta_k}$ can be interpreted as the hazard ratio associated with a one unit increase in covariate $k$. Because the Cox model is build upon a proportional hazards assumption, it is important to investigate and test whether there are proportional hazards in a proposed model. 
 
-Under the proportional hazards assumption, the $\beta$ coefficients are determined with maximum liklihood estimation. $L(\beta)=\prod_{i=1}^{n} {(\frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}})}^{\delta_i} \text{ where } \delta_i \text{ is an indicator for events}$. $b=\hat{\beta}$ is determined by taking the log-liklihood and setting partial derivatives with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 + \beta_2 x_i(t)}$. We want to test whether $\beta_2 = 0$, which means that there are proportional hazards. This is done by the r function cox.zph. 
+Under the proportional hazards assumption, the $\beta$ coefficients are determined with maximum liklihood estimation, meaning we estimate the parameters to maximize the likelihood of the observed data. The liklihood of the $i$th individual dying at $t_i$ (given there is at least one death at $t_i$) is $\frac{P(i^{th} \text{ indiv w/}x_i \text{ dies at } t_i)}{P(\text{at least one death at } t_i)} = \frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}}$. The liklihood of $\beta$ is equal to the product of the liklihoods of all the individuals who have death times recorded, so $\delta_i$ serves as an indicator for events. 
 
-Additional work on what the cox.zph function does to test the hypothesis that $\beta_2=0$ will be explored by looking at the r documentation.  
+\begin{eqnarray*}
+L(\beta) &=& \prod_{i=1}^{n} {(\frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}})}^{\delta_i}\\
+ln(L(\beta)) &=& \sum_{i=1}^{n}\delta_i (\beta x_i - ln(\sum_{k:t_k>t_i}e^{\beta x_k}))\\
+\end{eqnarray*}
+
+The log-liklihood is a function of only the coefficients and observed data with no assumptions on the distribution of event times. $b=\hat{\beta}$ is determined by setting partial derivatives of the log-liklihood with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 x_{i1} + \beta_2 x_{i2}(t)}$, where $\beta_1$ and $\beta_2$ are the coefficients of time-fixed and time-varying covariates respectively. Thus, the hazard ratio is no longer time-independent. To test whether a covariate should enter the model as independent of time, we want to test the hypothesis $\beta_2 = 0$. We can no longer use the liklihood to calculate the $\beta$ estimates because time dependency is already being used in the denominator of the likelihood function in the sum over all patients at risk at a given time. 
+
+Schoenfeld residual for each covariate is equal to the difference between the observed and expected value of the covariate at each event time. Schoenfeld showed that the residuals are asymtotically uncorrelated and have an expected value of 0 under the Cox model. 
+
+Because maximum likelihood fails with time dependencies, Schoenfeld residuals are used. The R function cox.zph tests the proportionality of all predictors by creating interactions with time. It does this by correlating the Schoenfeld residuals against transformed time to test for independence between the residuals and time. Any correlation between the residuals and time indicate non-proportional hazards. Having very small p values indicates that the residuals are not constant over time, providing evidence that the variable is time-dependent and violates the proportional hazards assumption. 
+
 
 The following plots display the survival function, hazard function (to be estimated by the cox model), and cumulative hazard function for the AIDS study. 
 
@@ -145,16 +155,20 @@ KM <- survfit(Surv(time, censor)~1, data=aids)
 KM_trt<- survfit(Surv(time, censor)~txgrp_text, type="kaplan-meier", conf.type="log", data=aids)
 KM_karnof <- survfit(Surv(time, censor)~karnof, type="kaplan-meier", conf.type="log", data=aids)
 KM_cd4f <- survfit(Surv(time, censor)~cd4f, type="kaplan-meier", conf.type="log", data=aids)
+KM_strat2 <- survfit(Surv(time, censor)~strat2_text, type="kaplan-meier", conf.type="log", data=aids)
 
 ggsurvplot(KM, conf.int=TRUE, censor=F) + ggtitle("Overall Survival Curve")
-plot.haz(KM)
+#plot.haz(KM)
 ggsurvplot(KM, fun="cumhaz") + ggtitle("Cumulative Hazard Curve")
 ```
+
+The overall survival curves shows a slow decrease in survival probability over time. When separated by treatment and stratification groups, the IDV group consistantly has a higher survival probability than the placebo group. Additionally, each group is stratified upon CD4 (CD4 <= 50 or CD4 > 50). For both treatments, patients in the CD4 > 50 have a higher survival probability. 
+
 
 The table below displays the significance of each covariate individually when incorporated into a model.
 
 ```{r, echo=FALSE}
-covariates <- c("txgrp", "sex",  "raceth", "ivdrug", "hemophil", "karnof", "cd4", "priorzdv", "age")
+covariates <- c("txgrp", "sex",  "strat2", "raceth", "ivdrug", "hemophil", "karnof", "cd4", "priorzdv", "age")
 univ_formulas <- sapply(covariates,
                         function(x) as.formula(paste('Surv(time, censor)~', x)))
 univ_models <- lapply( univ_formulas, function(x){coxph(x, data = aids)})
@@ -180,7 +194,7 @@ res <- t(as.data.frame(univ_results, check.names = FALSE))
 as.data.frame(res)
 ```
 
-The individual covariates txgrp, karnof, and cd4 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, age, ivdrug, prior zdv, sex, hemophil and raceth. Now, to explore the proportional hazards assumption, I will plot the complimentary log log curves for the most significant variables. Under perfect proportional hazards, at any point in time, the difference between any two curves is constant. When proportional hazards is violated, the curves will exhibit a significant cross.
+The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. Additionally, because cd4 is a continuous variable, I will turn it into a factor variable with increments of 50 up tp 200 as well to determine whether it should be categorical or linear. Now, to explore the proportional hazards assumption, I will plot the complimentary log log curves for the most significant variables. Under perfect proportional hazards, at any point in time, the difference between any two curves is constant. When proportional hazards is violated, the curves will exhibit a significant cross.
 
 ```{r, echo=FALSE}
 p1 <- ggsurvplot(KM_trt, conf.int=TRUE, censor=F) 
@@ -202,9 +216,10 @@ arrange_ggsurvplots(ggsurvlist1, print = TRUE, ncol = 2, nrow = 1, title = 'Trea
 arrange_ggsurvplots(ggsurvlist2, print = TRUE, ncol = 2, nrow=1, title = 'Karnofsky')
 arrange_ggsurvplots(ggsurvlist3, print = TRUE, ncol = 2, nrow=1, title = 'CD4')
 ```
+
 When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards. A multivariate model will be fit with the three significant covariates in the order of most to least significant, as all appear to have proportional hazards. 
 
-I will build a cox ph model using onlu txgrp as a covariate
+I will build a cox ph model using only txgrp as a covariate. 
 ```{r, echo=FALSE}
 cox <- coxph(Surv(time,censor) ~ txgrp, data = aids)
 cox %>% tidy()
@@ -212,7 +227,7 @@ pchisq((-2*cox$loglik[1])-(-2*cox$loglik[2]), d=1, lower.tail = FALSE)
 ```
 The estimate for the treatment coefficient is -0.76225, which means that there is a reduction in hazard as treatment group changes from placebo to IDV. The LRT for adding in txgrp as a variable results in a p-value of 0.002, so it is included in the model. 
 
-I will build a cox ph model using txgrp + karnof as the covariates. 
+Adding karnof to the previous model: 
 ```{r, echo=FALSE}
 cox1 <- coxph(Surv(time,censor) ~ txgrp + karnof, data = aids)
 cox1 %>% tidy()
@@ -220,7 +235,7 @@ pchisq((-2*cox$loglik[2])-(-2*cox1$loglik[2]), d=1, lower.tail = FALSE)
 ```
 The estimate for the karnofsky coefficient is -0.080462, so hazard decreases as karnosky score increases. The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model.
 
-I will build a cox ph model using txgrp + karnof + cd4 as the covariates. 
+Adding cd4 to the model: 
 ```{r, echo=FALSE}
 cox2 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4, data = aids)
 cox2 %>% tidy()
@@ -228,7 +243,7 @@ pchisq((-2*cox1$loglik[2])-(-2*cox2$loglik[2]), d=1, lower.tail = FALSE)
 ```
 The estimate for the cd4 coefficient is -0.014622, so hazard decreases as cd4 increases. The LRT for adding in cd4 as a variable results in a p-value of 7.403133e-09, so it is included in the model. 
 
-I will build a cox ph model using txgrp + karnof + cd4 + age as the covariates. 
+Adding age to the model: 
 ```{r, echo = FALSE}
 cox3 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4 + age, data = aids)
 cox3 %>% tidy()
@@ -241,14 +256,14 @@ cox4 <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4f, data = aids)
 cox4 %>% tidy()
 pchisq((-2*cox1$loglik[2])-(-2*cox4$loglik[2]), d=6, lower.tail = FALSE)
 ```
-The p-value of 2.559148e-06 shows that the cd4 categories should be included in the model.The log(HR) will be linear in cd4 if it should be linear. Thus, $\frac{e^{b_2}}{e^{b_1}}=\frac{e^{b_3}}{e^{b_2}}=\frac{e^{b_4}}{e^{b_3}}$, so $b_2-b_1=b_3-b_2=b_4-b_3$.  
+The p-value of 2.559148e-06 shows that the cd4 categories should be included in the model. The log(HR) will be linear in cd4 if it should be linear. Thus, $\frac{e^{b_2}}{e^{b_1}}=\frac{e^{b_3}}{e^{b_2}}=\frac{e^{b_4}}{e^{b_3}}$, so $b_2-b_1=b_3-b_2=b_4-b_3$.  
 
 ```{r, echo=FALSE}
 -1.89993881--2.39426985
 -2.39426985--2.93830829
 -2.93830829--0.31005778
 ```
-Because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the lowest to the next lowest cd4 group is -2.628251 as compared to around 0.5, so cd4 should be kept as factors. Next, I will create models with interaction: first with karnof and cd4f interacting, and then with txgrp and cd4 interacting. 
+Because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the 100-150 to the 50-100 cd4 group is -2.628251 as compared to around 0.5 for the others, so cd4 should be kept as factors. Next, I will create models with interaction: first with karnof and cd4f interacting, and then with txgrp and cd4 interacting. 
 
 ```{r, echo=FALSE}
 cox5 <- coxph(Surv(time,censor) ~ txgrp + karnof*cd4f, data = aids)
@@ -271,4 +286,28 @@ Now, I will test whether the proportional hazards assumption holds with the two 
 cox.zph(cox2)
 cox.zph(cox4)
 ```
-From the cox.zph test, the p-value for all covariates is above 0.05, so the proportional hazards assumption is met and we cannot reject the null hypothesis that the hazards ratio is dependent on time. 
+From the cox.zph test, the p-value for all covariates in both models is above 0.05, so the proportional hazards assumption is met and we cannot reject the null hypothesis that the hazards ratio is dependent on time. 
+
+Since models 2 and 4 are not nested, a liklihood ratio test cannot be used to compare the two. AIC can also be used to compare models, and a lower AIC value corresponds to a better fit. AIC also relies on liklihoods, but does correct for differences in degrees of freedom so it is more comparable and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected
+
+```{r}
+#AIC
+extractAIC(cox2)
+extractAIC(cox4)
+
+#BIC
+extractAIC(cox2, k = log(length(aids$id)))
+extractAIC(cox4, k = log(length(aids$id)))
+```
+The AIC and BIC values for the two models suggest that model 2 may provide a better fit.
+
+Building upon model2, I will interact txgrp with priorzdv, because prior treatment could affect the response to current treatment.
+```{r}
+cox7 <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, data = aids)
+cox.zph(cox7)
+cox7 %>% tidy()
+pchisq((-2*cox2$loglik[2])-(-2*cox7$loglik[2]), d=2, lower.tail = FALSE)
+extractAIC(cox7)
+extractAIC(cox7, k = log(length(aids$id)))
+```
+This model still follows the proportional hazards assumption. The liklihood ratio test between cox2 and cox7 results in a p-value of 0.0576, which is just above the 0.05 cutoff for significane. It lowers AIC but BIC increases (likely because the model is more complex). Because it is extremely close to being significant and lowers the AIC, this is the final model. 
