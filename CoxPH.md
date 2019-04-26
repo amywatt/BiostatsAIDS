@@ -24,7 +24,7 @@ L(\beta) &=& \prod_{i=1}^{n} {(\frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k
 ln(L(\beta)) &=& \sum_{i=1}^{n}\delta_i (\beta x_i - ln(\sum_{k:t_k>t_i}e^{\beta x_k}))\\
 \end{eqnarray*}
 
-The log-liklihood is a function of only the coefficients and observed data with no assumptions on the distribution of event times. $b=\hat{\beta}$ is determined by setting partial derivatives of the log-liklihood with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 x_{i1} + \beta_2 x_{i2}(t)}$, where $\beta_1$ and $\beta_2$ are the coefficients of time-fixed and time-varying covariates respectively. Thus, the hazard ratio is no longer time-independent. To test whether a covariate should enter the model as independent of time, we want to test the hypothesis $\beta_2 = 0$. We can no longer use the liklihood to calculate the $\beta$ estimates because time dependency is already being used in the denominator of the likelihood function in the sum over all patients at risk at a given time. 
+The log-liklihood is a function of only the coefficients and observed data with no assumptions on the distribution of event times. $b=\hat{\beta}$ is determined by setting partial derivatives of the log-liklihood with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 x_{i1} + \beta_2(t) x_{i2}(t)}$, where $\beta_1$ and $\beta_2$ are the coefficients of time-fixed and time-varying covariates respectively. Thus, the hazard ratio is no longer time-independent. To test whether a covariate should enter the model as independent of time, we want to test the hypothesis $\beta_2 = 0$. We can no longer use the liklihood to calculate $\beta_2$ estimates because $\beta$ is now a function of time and we cannot maximize its likelihood. 
 
 Schoenfeld residual for each covariate is equal to the difference between the observed and expected value of the covariate at each event time. Schoenfeld showed that the residuals are asymtotically uncorrelated and have an expected value of 0 under the Cox model. 
 
@@ -33,9 +33,9 @@ Because maximum likelihood fails with time dependencies, Schoenfeld residuals ar
 
 The following plots display the survival function, hazard function (to be estimated by the cox model), and cumulative hazard function for the AIDS study. 
 
-![](CoxPH_files/figure-html/unnamed-chunk-4-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-4-2.png)<!-- -->
+![](CoxPH_files/figure-html/unnamed-chunk-4-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-4-2.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-4-3.png)<!-- -->
 
-The overall survival curves shows a slow decrease in survival probability over time. When separated by treatment and stratification groups, the IDV group consistantly has a higher survival probability than the placebo group. Additionally, each group is stratified upon CD4 (CD4 <= 50 or CD4 > 50). For both treatments, patients in the CD4 > 50 have a higher survival probability. 
+The overall survival curves shows a slow decrease in survival probability over time. 
 
 
 The table below displays the significance of each covariate individually when incorporated into a model.
@@ -55,11 +55,11 @@ The table below displays the significance of each covariate individually when in
 ## age        0.017         1 (0.99-1)       1.8    0.18
 ```
 
-The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. Additionally, because cd4 is a continuous variable, I will turn it into a factor variable with increments of 50 up tp 200 as well to determine whether it should be categorical or linear. Now, to explore the proportional hazards assumption, I will plot the complimentary log log curves for the most significant variables. Under perfect proportional hazards, at any point in time, the difference between any two curves is constant. When proportional hazards is violated, the curves will exhibit a significant cross.
+The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. Additionally, because cd4 is a continuous variable, I will turn it into a factor variable with increments of 50 up tp 200 as well to determine whether it should be categorical or linear. To explore the proportional hazards assumption, I will plot the complimentary log log curves for the most significant variables. Under perfect proportional hazards, at any point in time, the difference between any two curves is constant. When proportional hazards is violated, the curves will exhibit a significant cross. Because cd4 is a continuous variable, the curves for the categorical cd4 will be used.
 
 ![](CoxPH_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-6-2.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-6-3.png)<!-- -->
 
-When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards. A multivariate model will be fit with the three significant covariates in the order of most to least significant, as all appear to have proportional hazards. 
+When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards. A multivariate model will be fit with covariates in the order of most to least significant, as the top three most significant covariates appear to have proportional hazards. 
 
 I will build a cox ph model using only txgrp as a covariate. 
 
@@ -73,6 +73,7 @@ I will build a cox ph model using only txgrp as a covariate.
 ```
 ## [1] 0.002073565
 ```
+
 The estimate for the treatment coefficient is -0.76225, which means that there is a reduction in hazard as treatment group changes from placebo to IDV. The LRT for adding in txgrp as a variable results in a p-value of 0.002, so it is included in the model. 
 
 Adding karnof to the previous model: 
@@ -88,6 +89,7 @@ Adding karnof to the previous model:
 ```
 ## [1] 1.320752e-08
 ```
+
 The estimate for the karnofsky coefficient is -0.080462, so hazard decreases as karnosky score increases. The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model.
 
 Adding cd4 to the model: 
@@ -104,6 +106,7 @@ Adding cd4 to the model:
 ```
 ## [1] 7.403133e-09
 ```
+
 The estimate for the cd4 coefficient is -0.014622, so hazard decreases as cd4 increases. The LRT for adding in cd4 as a variable results in a p-value of 7.403133e-09, so it is included in the model. 
 
 Adding age to the model: 
@@ -121,6 +124,7 @@ Adding age to the model:
 ```
 ## [1] 0.1295928
 ```
+
 The confidence interval for the coefficient for age includes 0, so it is unclear what effect age has on hazard.The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. The covariates txgrp, karnof and cd4 should be included in the model built using forward selection. Next, I will create a model where cd4 is split into factors to see if it shoud be a categorical or continuous variable. 
 
 
@@ -139,6 +143,7 @@ The confidence interval for the coefficient for age includes 0, so it is unclear
 ```
 ## [1] 2.559148e-06
 ```
+
 The p-value of 2.559148e-06 shows that the cd4 categories should be included in the model. The log(HR) will be linear in cd4 if it should be linear. Thus, $\frac{e^{b_2}}{e^{b_1}}=\frac{e^{b_3}}{e^{b_2}}=\frac{e^{b_4}}{e^{b_3}}$, so $b_2-b_1=b_3-b_2=b_4-b_3$.  
 
 
@@ -153,8 +158,73 @@ The p-value of 2.559148e-06 shows that the cd4 categories should be included in 
 ```
 ## [1] -2.628251
 ```
-Because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the 100-150 to the 50-100 cd4 group is -2.628251 as compared to around 0.5 for the others, so cd4 should be kept as factors. Next, I will create models with interaction: first with karnof and cd4f interacting, and then with txgrp and cd4 interacting. 
 
+Because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the 100-150 to the 50-100 cd4 group is -2.628251 as compared to around 0.5 for the others, so cd4 should be kept as factors. 
+
+The best candidate models are those with txgrp, karnof, and cd4 as either a categorical or continuous variable. I will test whether the proportional hazards assumption holds with the two best models. 
+
+```
+##            rho chisq     p
+## txgrp  -0.0893 0.550 0.459
+## karnof -0.0594 0.237 0.626
+## cd4     0.1585 1.555 0.212
+## GLOBAL      NA 2.060 0.560
+```
+
+```
+##                 rho  chisq      p
+## txgrp       -0.0848 0.4947 0.4818
+## karnof      -0.0326 0.0695 0.7920
+## cd4f50-100  -0.0293 0.0558 0.8133
+## cd4f100-150 -0.1758 2.0837 0.1489
+## cd4f150-200  0.0766 0.3960 0.5292
+## cd4fover200  0.2045 2.8965 0.0888
+## GLOBAL           NA 6.1205 0.4098
+```
+
+From the cox.zph test, the p-value for all covariates in both models is above 0.05, so the proportional hazards assumption is met and we cannot reject the null hypothesis that the hazards ratio is dependent on time. 
+
+Since models 2 and 4 are not nested, a liklihood ratio test cannot be used to compare the two. AIC can also be used to compare models, and a lower AIC value corresponds to a better fit. AIC also relies on liklihoods, but does correct for differences in degrees of freedom so it is more comparable and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected.
+
+
+```r
+#AIC
+extractAIC(cox2)
+```
+
+```
+## [1]   3.0000 836.0552
+```
+
+```r
+extractAIC(cox4)
+```
+
+```
+## [1]   6.0000 839.3151
+```
+
+```r
+#BIC
+extractAIC(cox2, k = log(length(aids$id)))
+```
+
+```
+## [1]   3.0000 850.2945
+```
+
+```r
+extractAIC(cox4, k = log(length(aids$id)))
+```
+
+```
+## [1]   6.0000 867.7936
+```
+
+The AIC and BIC values for the two models suggest that model 2 may provide a better fit.
+
+
+Next, I will test the model with interaction: karnof and cd4f interacting,txgrp and cd4 interacting, and txgrp and priorzdv interacting. 
 
 ```
 ## Warning in fitter(X, Y, strats, offset, init, control, weights = weights, :
@@ -209,72 +279,9 @@ The p-value of 0.2164783 indicates that interaction between karnof and cd4f is n
 ```
 The p-value of 0.5398977 indicates that interaction between txgrp and cd4 is not needed in the model. 
 
-The best candidate models are those with txgrp, karnof, and cd4 as either a categorical or continuous variable. 
-
-Now, I will test whether the proportional hazards assumption holds with the two best models. 
-
-```
-##            rho chisq     p
-## txgrp  -0.0893 0.550 0.459
-## karnof -0.0594 0.237 0.626
-## cd4     0.1585 1.555 0.212
-## GLOBAL      NA 2.060 0.560
-```
-
-```
-##                 rho  chisq      p
-## txgrp       -0.0848 0.4947 0.4818
-## karnof      -0.0326 0.0695 0.7920
-## cd4f50-100  -0.0293 0.0558 0.8133
-## cd4f100-150 -0.1758 2.0837 0.1489
-## cd4f150-200  0.0766 0.3960 0.5292
-## cd4fover200  0.2045 2.8965 0.0888
-## GLOBAL           NA 6.1205 0.4098
-```
-From the cox.zph test, the p-value for all covariates in both models is above 0.05, so the proportional hazards assumption is met and we cannot reject the null hypothesis that the hazards ratio is dependent on time. 
-
-Since models 2 and 4 are not nested, a liklihood ratio test cannot be used to compare the two. AIC can also be used to compare models, and a lower AIC value corresponds to a better fit. AIC also relies on liklihoods, but does correct for differences in degrees of freedom so it is more comparable and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected
-
 
 ```r
-#AIC
-extractAIC(cox2)
-```
-
-```
-## [1]   3.0000 836.0552
-```
-
-```r
-extractAIC(cox4)
-```
-
-```
-## [1]   6.0000 839.3151
-```
-
-```r
-#BIC
-extractAIC(cox2, k = log(length(aids$id)))
-```
-
-```
-## [1]   3.0000 850.2945
-```
-
-```r
-extractAIC(cox4, k = log(length(aids$id)))
-```
-
-```
-## [1]   6.0000 867.7936
-```
-The AIC and BIC values for the two models suggest that model 2 may provide a better fit.
-
-Building upon model2, I will interact txgrp with priorzdv, because prior treatment could affect the response to current treatment.
-
-```r
-cox7 <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, data = aids)
+cox7 <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, data = aids, x=TRUE)
 cox.zph(cox7)
 ```
 
@@ -327,3 +334,101 @@ extractAIC(cox7, k = log(length(aids$id)))
 ## [1]   5.0000 858.0779
 ```
 This model still follows the proportional hazards assumption. The liklihood ratio test between cox2 and cox7 results in a p-value of 0.0576, which is just above the 0.05 cutoff for significane. It lowers AIC but BIC increases (likely because the model is more complex). Because it is extremely close to being significant and lowers the AIC, this is the final model. 
+
+One last tool to use to assess the models is the c index, which denotes the frequencies of concordant pairs among all pairs of subjects. Thus a higher c-value is indicative of a better predictive model. 
+
+```r
+cindex(cox2, Surv(time,censor) ~ txgrp + karnof + cd4, aids)$AppCindex$coxph
+```
+
+```
+## [1] 0.7761907
+```
+
+```r
+cindex(cox7, Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, aids)$AppCindex$coxph
+```
+
+```
+## [1] 0.7855695
+```
+The c index for cox2 is .776 and the c index for cox7 is .786, so cox7 results in more concordant pairs than cox2. 
+
+I will create testing and training sets. With the training set, I will build models with the same covariates as cox2 and cox7, then calculate the AIC and BIC. I will also calculate the c index using the testing set for both models. A total of 25 repetitions will be run with the testing size equal to 25% of the full dataset. 
+
+```r
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(aids))
+
+AIC2_values <- c()
+BIC2_values <- c()
+cindex2_values <- c()
+
+AIC7_values <- c()
+BIC7_values <- c()
+cindex7_values <- c()
+set.seed(47)
+for (i in 1:25) {
+  train_ind <- sample(seq_len(nrow(aids)), size = smp_size)
+
+  train <- aids[train_ind, ]
+  test <- aids[-train_ind, ]
+  
+  cox7_CV <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, data = train, x=TRUE)
+  cox2_CV <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4, data = train, x=TRUE)
+  
+  AIC2_values[i] = extractAIC(cox2_CV)[2]
+  AIC7_values[i] = extractAIC(cox7_CV)[2]
+  BIC2_values[i] = extractAIC(cox2_CV, k = log(length(train$id)))[2]
+  BIC7_values[i] = extractAIC(cox7_CV, k = log(length(train$id)))[2]
+  cindex2_values[i] <- cindex(cox2_CV, Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, test)$AppCindex$coxph
+  cindex7_values[i] <- cindex(cox7_CV, Surv(time,censor) ~ txgrp + karnof + cd4, test)$AppCindex$coxph
+}
+
+mean(AIC2_values)
+```
+
+```
+## [1] 602.5952
+```
+
+```r
+mean(AIC7_values)
+```
+
+```
+## [1] 601.8936
+```
+
+```r
+mean(BIC2_values)
+```
+
+```
+## [1] 615.9703
+```
+
+```r
+mean(BIC7_values)
+```
+
+```
+## [1] 624.1853
+```
+
+```r
+mean(cindex2_values)
+```
+
+```
+## [1] 0.7759482
+```
+
+```r
+mean(cindex7_values)
+```
+
+```
+## [1] 0.7814926
+```
+Based on AIC and c index, cox7 is a better model. The final model includes the covariates txgrp*priorzdv, cd4, karnof. 
