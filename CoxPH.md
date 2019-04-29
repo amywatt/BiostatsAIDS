@@ -15,27 +15,30 @@ output:
 
 
 
-The Cox Proportional Hazards model describes the relationship between survival of an individual based on one or more explanatory variables (covariates). Thus, it can help estimate the effectiveness of treatment on survival, and can provide an estimate of the hazard function (the liklihood of the event occuring at any given point in time) based on the covariates. I will select explanatory variables from the AIDS study to build a Cox model to predict survival information related to the significant explanatory variables, as well as to construct an estimates of the hazard function to predict the liklihood of an individual experiencing AIDS diagnosis or death. The Cox model relies on the assumption that there are proportional hazards (the ratio of hazards for any two individuals is constant over time). This is because the Cox model is built on the following: $h_i(t) = h_0(t)e^{\beta x_i}$ for the $i$th individual. Then, the hazard ratio for individuals $i$ and $j$ is $\frac{h_0(t)e^{\beta x_i}}{h_0(t)e^{\beta x_j}}=e^{\beta(x_i-x_j)}$, so there are proportional hazards for any two individuals, independent of time. Additionally, $e^{\beta_k}$ can be interpreted as the hazard ratio associated with a one unit increase in covariate $k$. Because the Cox model is build upon a proportional hazards assumption, it is important to investigate and test whether there are proportional hazards in a proposed model. 
 
-Under the proportional hazards assumption, the $\beta$ coefficients are determined with maximum liklihood estimation, meaning we estimate the parameters to maximize the likelihood of the observed data. The liklihood of the $i$th individual dying at $t_i$ (given there is at least one death at $t_i$) is $\frac{P(i^{th} \text{ indiv w/}x_i \text{ dies at } t_i)}{P(\text{at least one death at } t_i)} = \frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}}$. The liklihood of $\beta$ is equal to the product of the liklihoods of all the individuals who have death times recorded, so $\delta_i$ serves as an indicator for events. 
+
+
+The Cox Proportional Hazards model describes the relationship between survival of an individual based on one or more explanatory variables (covariates). Thus, it can help estimate the effectiveness of treatment on survival and can provide an estimate of the hazard function (the likelihood  of the event occuring at any given point in time) based on the covariates. I will select explanatory variables from the AIDS study to build a Cox model to predict survival information related to the significant explanatory variables, as well as to construct an estimate of the hazard function to predict the likelihood of an individual experiencing AIDS diagnosis or death. The Cox model relies on the assumption that there are proportional hazards (the ratio of hazards for any two individuals is constant over time). This is because the Cox model is built on the following: $h_i(t) = h_0(t)e^{\beta x_i}$ for the $i$th individual. Then, the hazard ratio for individuals $i$ and $j$ is $\frac{h_0(t)e^{\beta x_i}}{h_0(t)e^{\beta x_j}}=e^{\beta(x_i-x_j)}$, so there are proportional hazards for any two individuals, independent of time. Additionally, $e^{\beta_k}$ can be interpreted as the hazard ratio associated with a one unit increase in covariate $k$. Because the Cox model is built upon a proportional hazards assumption, it is important to investigate and test whether there are proportional hazards in a proposed model. 
+
+Under the proportional hazards assumption, the $\beta$ coefficients are determined with maximum likelihood estimation, meaning we estimate the parameters to maximize the likelihood of the observed data. The likelihood of the $i$th individual dying at $t_i$ (given there is at least one death at $t_i$) is $\frac{P(i^{th} \text{ indiv w/}x_i \text{ dies at } t_i)}{P(\text{at least one death at } t_i)} = \frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}}$. The likelihood of $\beta$ is equal to the product of the likelihoods of all the individuals who have death times recorded, so $\delta_i$ serves as an indicator for events. 
 
 \begin{eqnarray*}
 L(\beta) &=& \prod_{i=1}^{n} {(\frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}})}^{\delta_i}\\
 ln(L(\beta)) &=& \sum_{i=1}^{n}\delta_i (\beta x_i - ln(\sum_{k:t_k>t_i}e^{\beta x_k}))\\
 \end{eqnarray*}
 
-The log-liklihood is a function of only the coefficients and observed data with no assumptions on the distribution of event times. $b=\hat{\beta}$ is determined by setting partial derivatives of the log-liklihood with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 x_{i1} + \beta_2(t) x_{i2}(t)}$, where $\beta_1$ and $\beta_2$ are the coefficients of time-fixed and time-varying covariates respectively. Thus, the hazard ratio is no longer time-independent. To test whether a covariate should enter the model as independent of time, we want to test the hypothesis $\beta_2 = 0$. We can no longer use the liklihood to calculate $\beta_2$ estimates because $\beta$ is now a function of time and we cannot maximize its likelihood. 
+The log-likelihood is a function of only the coefficients and observed data with no assumptions on the distribution of event times. $b=\hat{\beta}$ is determined by setting partial derivatives of the log-likelihood with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 x_{i1} + \beta_2(t) x_{i2}(t)}$, where $\beta_1$ and $\beta_2$ are the coefficients of time-fixed and time-varying covariates respectively. Thus, the hazard ratio is no longer time-independent. To test whether a covariate should enter the model as independent of time, we want to test the hypothesis $\beta_2 = 0$. We can no longer use the likelihood to calculate $\beta_2$ estimates because $\beta$ is now a function of time and we cannot maximize its likelihood. 
 
-Schoenfeld residual for each covariate is equal to the difference between the observed and expected value of the covariate at each event time. Schoenfeld showed that the residuals are asymtotically uncorrelated and have an expected value of 0 under the Cox model. 
+The Schoenfeld residual for each covariate is equal to the difference between the observed and expected value of the covariate at each event time. Schoenfeld showed that the residuals are asymptotically uncorrelated and have an expected value of 0 under the Cox model. 
 
-Because maximum likelihood fails with time dependencies, Schoenfeld residuals are used. The R function cox.zph tests the proportionality of all predictors by creating interactions with time. It does this by correlating the Schoenfeld residuals against transformed time to test for independence between the residuals and time. Any correlation between the residuals and time indicate non-proportional hazards. Having very small p values indicates that the residuals are not constant over time, providing evidence that the variable is time-dependent and violates the proportional hazards assumption. 
+Because maximum likelihood fails with time dependencies, Schoenfeld residuals are used. The R function cox.zph tests the proportionality of all predictors by creating interactions with time. It does this by correlating the Schoenfeld residuals against transformed time to test for independence between the residuals and time. Any correlation between the residuals and time indicate non-proportional hazards. Having very small p values indicates that the residuals are not constant over time, providing evidence the proportional hazards assumption is violated. 
 
 
 The following plots display the survival function, hazard function (to be estimated by the cox model), and cumulative hazard function for the AIDS study. 
 
-![](CoxPH_files/figure-html/unnamed-chunk-4-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-4-2.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-4-3.png)<!-- -->
+![](CoxPH_files/figure-html/unnamed-chunk-5-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-2.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-5-3.png)<!-- -->
 
-The overall survival curves shows a slow decrease in survival probability over time. 
+The overall survival curves show a slow decrease in survival probability over time. 
 
 
 The table below displays the significance of each covariate individually when incorporated into a model.
@@ -55,13 +58,13 @@ The table below displays the significance of each covariate individually when in
 ## age        0.017         1 (0.99-1)       1.8    0.18
 ```
 
-The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. Additionally, because cd4 is a continuous variable, I will turn it into a factor variable with increments of 50 up tp 200 as well to determine whether it should be categorical or linear. To explore the proportional hazards assumption, I will plot the complimentary log log curves for the most significant variables. Under perfect proportional hazards, at any point in time, the difference between any two curves is constant. When proportional hazards is violated, the curves will exhibit a significant cross. Because cd4 is a continuous variable, the curves for the categorical cd4 will be used.
+The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients. The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. Additionally, because cd4 is a continuous variable, I will turn it into a factor variable with increments of 50 up to 200 as well to determine whether it should be categorical or linear. To explore the proportional hazards assumption, I will plot the complimentary log log curves for the most significant variables. Under perfect proportional hazards, at any point in time, the difference between any two curves is constant. When proportional hazards is violated, the curves will exhibit a significant cross. Because cd4 is a continuous variable, the curves for the categorical cd4 will be used.
 
-![](CoxPH_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-6-2.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-6-3.png)<!-- -->
+![](CoxPH_files/figure-html/unnamed-chunk-7-1.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-7-2.png)<!-- -->![](CoxPH_files/figure-html/unnamed-chunk-7-3.png)<!-- -->
 
 When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards. A multivariate model will be fit with covariates in the order of most to least significant, as the top three most significant covariates appear to have proportional hazards. 
 
-I will build a cox ph model using only txgrp as a covariate. 
+I will build a cox ph model (Model 0) using only txgrp as a covariate. 
 
 ```
 ## # A tibble: 1 x 7
@@ -76,7 +79,7 @@ I will build a cox ph model using only txgrp as a covariate.
 
 The estimate for the treatment coefficient is -0.76225, which means that there is a reduction in hazard as treatment group changes from placebo to IDV. The LRT for adding in txgrp as a variable results in a p-value of 0.002, so it is included in the model. 
 
-Adding karnof to the previous model: 
+Adding karnof to the previous model (Model 1): 
 
 ```
 ## # A tibble: 2 x 7
@@ -92,7 +95,7 @@ Adding karnof to the previous model:
 
 The estimate for the karnofsky coefficient is -0.080462, so hazard decreases as karnosky score increases. The LRT for adding in karnof as a variable results in a p-value of 1.320752e-08, so it is included in the model.
 
-Adding cd4 to the model: 
+Adding cd4 to the model (Model 2): 
 
 ```
 ## # A tibble: 3 x 7
@@ -109,7 +112,7 @@ Adding cd4 to the model:
 
 The estimate for the cd4 coefficient is -0.014622, so hazard decreases as cd4 increases. The LRT for adding in cd4 as a variable results in a p-value of 7.403133e-09, so it is included in the model. 
 
-Adding age to the model: 
+Adding age to the model (Model 3): 
 
 ```
 ## # A tibble: 4 x 7
@@ -125,7 +128,7 @@ Adding age to the model:
 ## [1] 0.1295928
 ```
 
-The confidence interval for the coefficient for age includes 0, so it is unclear what effect age has on hazard.The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. The covariates txgrp, karnof and cd4 should be included in the model built using forward selection. Next, I will create a model where cd4 is split into factors to see if it shoud be a categorical or continuous variable. 
+The confidence interval for the coefficient for age includes 0, so it is unclear what effect age has on hazard. The LRT for adding in age as a variable results in a p-value of .13, so it is not included in the model. The covariates txgrp, karnof and cd4 should be included in the model built using forward selection. Next, I will create a model where cd4 is split into factors (Model 4) to see if it should be a categorical or continuous variable. 
 
 
 ```
@@ -159,7 +162,7 @@ The p-value of 2.559148e-06 shows that the cd4 categories should be included in 
 ## [1] -2.628251
 ```
 
-Because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the 100-150 to the 50-100 cd4 group is -2.628251 as compared to around 0.5 for the others, so cd4 should be kept as factors. 
+Because there are constant 50 cd4 gaps between the groups. The relationship holds for the upper 3 cd4 factors, but the value from moving from the 100-150 to the 50-100 cd4 group is -2.628251 as compared to around 0.5 for the others, so cd4 should be kept as factors. This suggests the use of categorical cd4 over linear, but I will continue to assess the two models to see which is a better fit for the data. 
 
 The best candidate models are those with txgrp, karnof, and cd4 as either a categorical or continuous variable. I will test whether the proportional hazards assumption holds with the two best models. 
 
@@ -184,7 +187,7 @@ The best candidate models are those with txgrp, karnof, and cd4 as either a cate
 
 From the cox.zph test, the p-value for all covariates in both models is above 0.05, so the proportional hazards assumption is met and we cannot reject the null hypothesis that the hazards ratio is dependent on time. 
 
-Since models 2 and 4 are not nested, a liklihood ratio test cannot be used to compare the two. AIC can also be used to compare models, and a lower AIC value corresponds to a better fit. AIC also relies on liklihoods, but does correct for differences in degrees of freedom so it is more comparable and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected.
+Since Models 2 and 4 are not nested, a likelihood ratio test cannot be used to compare the two. AIC can also be used to compare models, and a lower AIC value corresponds to a better fit. AIC also relies on likelihoods, but does correct for differences in degrees of freedom so it is more comparable and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected.
 
 
 ```r
@@ -221,10 +224,10 @@ extractAIC(cox4, k = log(length(aids$id)))
 ## [1]   6.0000 867.7936
 ```
 
-The AIC and BIC values for the two models suggest that model 2 may provide a better fit.
+The AIC and BIC values for the two models suggest that model 2 may provide a better fit. I will continue to build upon model 2. 
 
 
-Next, I will test the model with interaction: karnof and cd4f interacting,txgrp and cd4 interacting, and txgrp and priorzdv interacting. 
+Next, I will test the model with interaction: karnof and cd4f interacting (Model 5),txgrp and cd4 interacting (Model 6), and txgrp and priorzdv interacting (Model 7). 
 
 ```
 ## Warning in fitter(X, Y, strats, offset, init, control, weights = weights, :
@@ -250,6 +253,7 @@ Next, I will test the model with interaction: karnof and cd4f interacting,txgrp 
 ```
 ## [1] 0.2164783
 ```
+
 The p-value of 0.2164783 indicates that interaction between karnof and cd4f is not necessary in the model. 
 
 
@@ -277,13 +281,9 @@ The p-value of 0.2164783 indicates that interaction between karnof and cd4f is n
 ```
 ## [1] 0.5398977
 ```
+
 The p-value of 0.5398977 indicates that interaction between txgrp and cd4 is not needed in the model. 
 
-
-```r
-cox7 <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, data = aids, x=TRUE)
-cox.zph(cox7)
-```
 
 ```
 ##                    rho chisq     p
@@ -293,10 +293,6 @@ cox.zph(cox7)
 ## cd4             0.1518 1.431 0.232
 ## txgrp:priorzdv  0.0755 0.328 0.567
 ## GLOBAL              NA 2.439 0.786
-```
-
-```r
-cox7 %>% tidy()
 ```
 
 ```
@@ -310,49 +306,30 @@ cox7 %>% tidy()
 ## 5 txgrp:priorzdv  -0.0288   0.0138     -2.08  0.0375     -0.0559   -0.00167
 ```
 
-```r
-pchisq((-2*cox2$loglik[2])-(-2*cox7$loglik[2]), d=2, lower.tail = FALSE)
-```
-
 ```
 ## [1] 0.05757311
-```
-
-```r
-extractAIC(cox7)
 ```
 
 ```
 ## [1]   5.0000 834.3458
 ```
 
-```r
-extractAIC(cox7, k = log(length(aids$id)))
-```
-
 ```
 ## [1]   5.0000 858.0779
 ```
-This model still follows the proportional hazards assumption. The liklihood ratio test between cox2 and cox7 results in a p-value of 0.0576, which is just above the 0.05 cutoff for significane. It lowers AIC but BIC increases (likely because the model is more complex). Because it is extremely close to being significant and lowers the AIC, this is the final model. 
+
+This model still follows the proportional hazards assumption. The likelihood ratio test between Model 2 and 7 results in a p-value of 0.0576, which is just above the 0.05 cutoff for significance. It lowers AIC but BIC increases (likely because the model is more complex). Because it is extremely close to being significant and lowers the AIC, this is the final model. 
 
 One last tool to use to assess the models is the c index, which denotes the frequencies of concordant pairs among all pairs of subjects. Thus a higher c-value is indicative of a better predictive model. 
-
-```r
-cindex(cox2, Surv(time,censor) ~ txgrp + karnof + cd4, aids)$AppCindex$coxph
-```
 
 ```
 ## [1] 0.7761907
 ```
 
-```r
-cindex(cox7, Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, aids)$AppCindex$coxph
-```
-
 ```
 ## [1] 0.7855695
 ```
-The c index for cox2 is .776 and the c index for cox7 is .786, so cox7 results in more concordant pairs than cox2. 
+The c index for Model 2 is .776 and the c index for Model 7 is .786, so Model 7 results in more concordant pairs than Model 2. 
 
 I will create testing and training sets. With the training set, I will build models with the same covariates as cox2 and cox7, then calculate the AIC and BIC. I will also calculate the c index using the testing set for both models. A total of 25 repetitions will be run with the testing size equal to 25% of the full dataset. 
 
@@ -367,8 +344,10 @@ cindex2_values <- c()
 AIC7_values <- c()
 BIC7_values <- c()
 cindex7_values <- c()
-set.seed(47)
-for (i in 1:25) {
+reps = 100
+
+set.seed(53)
+for (i in 1:reps) {
   train_ind <- sample(seq_len(nrow(aids)), size = smp_size)
 
   train <- aids[train_ind, ]
@@ -389,7 +368,7 @@ mean(AIC2_values)
 ```
 
 ```
-## [1] 602.5952
+## [1] 604.1311
 ```
 
 ```r
@@ -397,7 +376,7 @@ mean(AIC7_values)
 ```
 
 ```
-## [1] 601.8936
+## [1] 603.3799
 ```
 
 ```r
@@ -405,7 +384,7 @@ mean(BIC2_values)
 ```
 
 ```
-## [1] 615.9703
+## [1] 617.5061
 ```
 
 ```r
@@ -413,7 +392,7 @@ mean(BIC7_values)
 ```
 
 ```
-## [1] 624.1853
+## [1] 625.6716
 ```
 
 ```r
@@ -421,7 +400,7 @@ mean(cindex2_values)
 ```
 
 ```
-## [1] 0.7759482
+## [1] 0.7711693
 ```
 
 ```r
@@ -429,6 +408,34 @@ mean(cindex7_values)
 ```
 
 ```
-## [1] 0.7814926
+## [1] 0.7753953
 ```
 Based on AIC and c index, cox7 is a better model. The final model includes the covariates txgrp*priorzdv, cd4, karnof. 
+
+
+```r
+aic <- c(AIC2_values, AIC7_values)
+bic <- c(BIC2_values, BIC7_values)
+cindex <- c(cindex2_values, cindex7_values)
+model <- c(rep('two', reps), rep('seven', reps))
+sim.data <- data.frame (aic, bic, cindex, model)
+
+par(mfrow=c(1,3))
+mu <- ddply(sim.data, "model", summarise, grp.mean=mean(aic))
+p1<-ggplot(sim.data) + geom_density(aes(x = aic, color=model, fill = model), alpha = 0.2) + geom_vline(data=mu, aes(xintercept=grp.mean, color=model), linetype="dashed")
+
+mu <- ddply(sim.data, "model", summarise, grp.mean=mean(bic))
+p2<-ggplot(sim.data) + geom_density(aes(x = bic, color=model, fill = model), alpha = 0.2) + geom_vline(data=mu, aes(xintercept=grp.mean, color=model), linetype="dashed")
+
+mu <- ddply(sim.data, "model", summarise, grp.mean=mean(cindex))
+p3<-ggplot(sim.data) + geom_density(aes(x = cindex, color=model, fill = model), alpha = 0.2) + geom_vline(data=mu, aes(xintercept=grp.mean, color=model), linetype="dashed")
+
+multiplot(p1, p2, p3, rows=3)
+```
+
+![](CoxPH_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+
+```
+## [1] 3
+```
+

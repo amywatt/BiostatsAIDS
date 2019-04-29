@@ -18,6 +18,8 @@ library(survival)
 library(survminer)
 library(grid)
 library(pec)
+library(cowplot)
+library(plyr)
 ```
 
 ```{r, echo=FALSE}
@@ -112,33 +114,124 @@ for (elt in 1:length(aids$id)) {
 ```
 
 
-${\Large{Introduction:}}$
+### Introduction:
 
 The Human Immunideficiency Virus (HIV) targets CD4 cells (T cells), which are part of the immune system and help fight infections by recognizing infectious agents and signalling other cells in the immune system to respond (1). When CD4 cells are decreased, the ability to fight off infections is impaired. Acquired Immunideficiency Syndrome (AIDS) occurs when CD4 cell count (normall in the range of 500-1500 cells/mm) drops below 200 cells/mm. Because HIV is a retrovirus, upon infection, the human genome is altered to permanently include the HIV virus and there is no permanent cure. Common treatment for HIV is antiretroviral therapy, a combination of multiple drugs intended to keep the amount of HIV in the blood low by preventing existing HIV from multiplying (2). Previous trials with drug combinations have found that three-drug regiments including one protease inhibitor (inhibit enzymes that process proteins necessary for HIV replication) and two nucleoside analogs (molecules that are similar to natural nucleotides but terminate DNA replication when used). The treatment consisting of indinavir, zidovudine, and lamivudine was shown to decrease plasma HIV RNA concentrations to under 500 copies/ml in the majority of patients (the threshold for undetectable levels is 400 copes/ml (3)). To determine the efficacy and safety of this proposed regimen, a clinical study by Hammer et al. was run comparing the control regimen (zidovudine, lamivudine) to the treatment regimen (indinavor, zidovudine, lamivudine) (4). 
 
 HIV-infected patients enrolled in the study were required to have at most a CD4 count of 200 cells/mm and at least three months of prior zidovudine therapy. The study was stratified on CD4 levels  50 cells/ml or lower and levels 51-200 cells/ml, and the study was designed to have 40% of all enrolled patients had 50 or fewer CD4 cells per milliliter. To measure efficacy, the outcome of interest was time to a AIDS-defining event or death (4). This is an analysis of the efficacy of the three-drug therapy, with the goal of building a Cox Proportional Hazards model to model the survival of patients. 
 
-$\Large{Methods:}$
+### Methods:
 
 Data for this analysis were taken from the Hammer et al. study. An initial data exploration used a chi-squared test of proportions on demographics of participants and the response (AIDS/Death) associated with various explanatory variables.
 
 An initial Cox PH model was built using forward step-wise selection. A Cox model was built for each individual covariate, and covariates were added to a new model in order of most to least significant according to the p-value from a Wald test, forming a series of nested models while the likelihood ratio test for adding the last covariate showed significance. Because strat2 and cd4 convey very similar information, only cd4 was considered for model building. Complimentary log log curves, as well as Kaplan-Meier survival curves, of individual covariates in the model were used as an initial assesment of the proportional hazards assumption. The proportional hazard assumption in resulting model from forward selection was assessed with the cox.zph function. Models with CD4 as a covariate was compared to similar models built substituting a categorical CD4 variable (groups 50 cells/ml apart) for the continuous CD4 variable. The use of a categorical versus linear covariate was analyzed by examining the linearlity of the log(HR) between categorical groups. The two models were also assessed for fit using AIC and BIC. An additional model was built using intuition and background knowledge of medical treatments. This model was assess for fit using AIC, BIC, and a c index by building several models on a training set (75% of whole dataset), and the statistics were measured with a testing set (25% of whole dataset).Proportional hazards were confirmed using cox.zph. 
 
-$\Large{Results:}$
+### Results:
 
 Statistical analyses were conducted to assess the survival of the patients.
 
 1. Patient Selection
 
-There was an unequal representation of demographics in the 851 patients in the study. There was a significant difference in the gender distribution (717 malem 134 female, p=2.2e-16) as well as race/ethnicity (447 white non-hispanic, 235 black non-hispanic, 150 hispanic, 10 pacific islander, 9 American Indian/Alaskan Native, p=2.2e-16). The most higly represened demographic was male, white non-hispanic (407) followed by male, black non-hispanic (176). 
+There was an unequal representation of demographics in the 851 patients in the study (Figure 1). There was a significant difference in the gender distribution (Figure 1A) as well as race/ethnicity (Figure 1B). The most higly represened demographic was male, white non-hispanic followed by male, black non-hispanic (Figure 1C). 
+
+```{r, echo=FALSE}
+dfTab <- as.data.frame(table(aids$sex_text))
+colnames(dfTab)[1] <- "n"
+dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
+
+sex <- ggplot(aids, aes(x=sex_text, fill=sex_text)) + 
+    geom_bar( ) +
+    scale_fill_brewer(palette = "Set2") + labs(title = 'Sex Frequency', x = "Sex", y = "Count") +
+    theme(legend.position = "none") +
+    geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=-0.3, inherit.aes = FALSE, size =2)
+
+dfTab <- as.data.frame(table(aids$raceth_text))
+colnames(dfTab)[1] <- "n"
+dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
+
+eth <- ggplot(aids, aes(x=raceth_text, fill=raceth_text)) +
+    geom_bar( ) +
+    scale_fill_brewer(palette = "Set2") +
+    labs(title = 'Race/Ethnicity Frequency', x = "Race/Ethnicity", y = "Count") +
+    theme(legend.position = "right") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=-0.3, inherit.aes = FALSE, size=2) +
+    theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
+    guides(fill=guide_legend(title="Race/Ethnicity"))
+
+dfTab <- as.data.frame(table(aids$demo_text))
+colnames(dfTab)[1] <- "n"
+dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
+
+demo <- ggplot(aids, aes(x=demo_text, fill=demo_text)) +
+    geom_bar( ) +
+    scale_fill_brewer(palette = "Set3") +
+    labs(title = 'Sex and Race/Ethnicity Demographics', x = "Demographics", y = "Count") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(legend.position = "right") +
+    geom_text(data=dfTab, aes(n, Freq, label = Freq), vjust=-0.3, inherit.aes = FALSE, size=2) +
+    theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
+    guides(fill=guide_legend(title="Demographic"))
+
+theme_set(theme_cowplot(font_size=8))
+bottom <- plot_grid(sex, eth, labels = c('A', 'B'), align = 'h')
+plot_grid(bottom, demo, ncol=1, labels = c('', 'C'))
+```
+
+Figure 1: Distribution of sex (A), and race/ethnicity (B), sex and race/ethnicity (C). All three variables resulted in a p-value of 2.2e-16 in a chi-squared test of proportions. 
 
 2. Significant Variables
 
-The difference in proportions of patients who recieve AIDS diagnoses or die for various explanatory variables was assessed. There is a significant difference in the proportion of individuals who develop AIDS or die across the different Karnofsky scale groups (p=2.047e-09), CD4 categorical groups (p=9.129e-08), and treatment groups (p=0.004594). There is no significant difference in the proportion of individuals who develop AIDS or die across the different drug usage groups (p=0.7401) or hemophilia groups (p=0.918). 
+The difference in proportions of patients who recieve AIDS diagnoses or die for various explanatory variables was assessed. There is a significant difference in the proportion of individuals who develop AIDS or die across the different Karnofsky scale groups (Figure 2A), CD4 categorical groups (Figure 2B), and treatment groups (Figure 2C). There is no significant difference in the proportion of individuals who develop AIDS or die across the different drug usage groups (p=0.7401) or hemophilia groups (p=0.918). 
+
+```{r, echo=FALSE}
+dfTab <- as.data.frame(table(aids$cd4f, aids$censor_text))
+colnames(dfTab)[1] <- "n"
+colnames(dfTab)[2] <- "censor_text"
+dfTab$lab <- as.character(100 * dfTab$Freq / sum(dfTab$Freq))
+
+p1 <- ggplot(dfTab, aes(x=n, y=Freq, fill=censor_text)) + 
+    geom_bar(stat='identity') +
+    scale_fill_brewer(palette = "Set3") + 
+    labs(title = 'CD4 Frequency', x = "CD4", y = "Count") +  
+    theme(legend.position = "bottom") +  
+    theme(legend.title=element_blank()) + 
+    geom_text(aes(x=dfTab$n, y=dfTab$Freq, label=dfTab$Freq), position = position_stack(vjust = 0.5), size=2.5)
+
+dfTab2 <- as.data.frame(table(aids$karnof, aids$censor_text))
+colnames(dfTab2)[1] <- "n"
+colnames(dfTab2)[2] <- "censor_text"
+dfTab2$lab <- as.character(100 * dfTab2$Freq / sum(dfTab2$Freq))
+
+p2 <- ggplot(dfTab2, aes(x=n, y=Freq, fill=censor_text)) + 
+    geom_bar(stat='identity') +
+    scale_fill_brewer(palette = "Set3") + 
+    labs(title = 'Karnofsky Frequency', x = "Karnofsky Scale", y = "Count") +  
+    theme(legend.position = "bottom") +  
+    theme(legend.title=element_blank()) + 
+    geom_text(aes(x=dfTab2$n, y=dfTab2$Freq, label=dfTab2$Freq), position = position_stack(vjust = 0.5), size=2.5)
+
+dfTab3 <- as.data.frame(table(aids$txgrp_text, aids$censor_text))
+colnames(dfTab3)[1] <- "n"
+colnames(dfTab3)[2] <- "censor_text"
+dfTab3$lab <- as.character(100 * dfTab3$Freq / sum(dfTab3$Freq))
+
+p3 <- ggplot(dfTab3, aes(x=n, y=Freq, fill=censor_text)) + 
+    geom_bar(stat='identity') +
+    scale_fill_brewer(palette = "Set3") + 
+    labs(title = 'Treatment Group Frequency', x = "Treatment", y = "Count") +  
+    theme(legend.position = "bottom") +  
+    theme(legend.title=element_blank()) + 
+    geom_text(aes(x=dfTab3$n, y=dfTab3$Freq, label=dfTab3$Freq), position = position_stack(vjust = 0.5), size=2.5)
+
+plot_grid(p2, p1, p3, labels = c('A','B', 'C'), ncol=3)
+```
+
+Figue 2. Proportions of patients who recieve AIDS diagnoses or die for Karnofsky score (A), CD4 (B), and Treatment (C) groups. A chi-squared test of proportions demostrated that the proportion of individuals who experience the event is not equal across different groups (Karnofsky: p=2.047e-09, CD4: p=9.129e-08, Treatment: p=0.004594).
 
 3. Cox Models
 
-A survival curve and cumulative hazard curve of the whole patient population show a slow decrease in survival probability over time (Figure 1).
+A survival curve and cumulative hazard curve of the whole patient population show a slow decrease in survival probability over time (Figure 3).
 
 ```{r, echo=FALSE}
 KM <- survfit(Surv(time, censor)~1, data=aids)
@@ -153,9 +246,9 @@ ggsurvlist1 <- list(p1, p2)
 arrange_ggsurvplots(ggsurvlist1, print = TRUE, ncol = 2, nrow = 1)
 ```
 
-Figure 1: Survival curve and cumulative hazard curve of patient population.
+Figure 3: Survival curve and cumulative hazard curve of patient population.
 
-The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients (Table 1). The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. The survival probabilities of patients differs across all variables (txgrp, karnof, cd4). When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When Karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards (Figure 2).
+The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients (Table 1). The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. The survival probabilities of patients differs across all variables (txgrp, karnof, cd4). When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When Karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards (Figure 4).
 
 ```{r, echo=FALSE}
 covariates <- c("txgrp", "sex",  "strat2", "raceth", "ivdrug", "hemophil", "karnof", "cd4", "priorzdv", "age")
@@ -207,7 +300,7 @@ arrange_ggsurvplots(ggsurvlist2, print = TRUE, ncol = 2, nrow=1, title = 'Karnof
 arrange_ggsurvplots(ggsurvlist3, print = TRUE, ncol = 2, nrow=1, title = 'CD4')
 ```
 
-Figure 2: Kaplan-Meier survival curves and complimentary log log curves for variables treatment group, Karnofsky, and CD4. 
+Figure 4: Kaplan-Meier survival curves and complimentary log log curves for variables treatment group, Karnofsky, and CD4. 
 
 
 The model built using forwards selection resulted in only the covariates txgrp, karnof and cd4 (Model 1). Replacing CD4 in Model 1 with a categorical CD4 variable (<=50, 51-100, 101-150, 151-200, >200) revealed that the log(HR) was not constant between the groups of equal size and thus CD4 is not a linear variable. But, when assesed with AIC and BIC values, the linear model (AIC=836.0552, BIC=850.2945) was lower than that of the categorical model (AIC=839.3151, BIC=867.7936), indicating that the linear model provided a better fit. 
@@ -223,7 +316,60 @@ Table 2: Estimates and significance levels for a Cox model (Model 2) using treat
 
 4. Model Assessment
 
-The AIC of Model 2 was 834.35, lower than that of the previous model, but the BIC was 858.08, greater than that of the previous model. Analysis of the c index revealed that the index of Model 1 (0.7759482) was less than that of Model 2 (0.7814926), indicating Model 2 is a better fit. Repeated calculations of AIC, BIC, and c index revealed that Model 2 consistantly had a lower AIC and c index. Analysis of Model 2 with cox.zph revealed proportional hazards (Table 3). 
+The AIC of Model 2 was 834.35, lower than that of the previous model, but the BIC was 858.08, greater than that of the previous model. Analysis of the c index revealed that the index of Model 1 (0.7759482) was less than that of Model 2 (0.7814926), indicating Model 2 is a better fit. Repeated simulations of building models with 75% of the data, and calculating AIC, BIC, and c index with the remaining data revealed that Model 2 had a lower AIC and c index on average (Figure 5). Analysis of Model 2 with cox.zph revealed proportional hazards (Table 3). 
+
+```{r, echo=FALSE}
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(aids))
+
+AIC1_values <- c()
+BIC1_values <- c()
+cindex1_values <- c()
+
+AIC2_values <- c()
+BIC2_values <- c()
+cindex2_values <- c()
+reps = 100
+
+set.seed(53)
+for (i in 1:reps) {
+  train_ind <- sample(seq_len(nrow(aids)), size = smp_size)
+
+  train <- aids[train_ind, ]
+  test <- aids[-train_ind, ]
+  
+  cox2_CV <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, data = train, x=TRUE)
+  cox1_CV <- coxph(Surv(time,censor) ~ txgrp + karnof + cd4, data = train, x=TRUE)
+  
+  AIC1_values[i] = extractAIC(cox1_CV)[2]
+  AIC2_values[i] = extractAIC(cox2_CV)[2]
+  BIC1_values[i] = extractAIC(cox1_CV, k = log(length(train$id)))[2]
+  BIC2_values[i] = extractAIC(cox2_CV, k = log(length(train$id)))[2]
+  cindex1_values[i] <- cindex(cox1_CV, Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, test)$AppCindex$coxph
+  cindex2_values[i] <- cindex(cox2_CV, Surv(time,censor) ~ txgrp + karnof + cd4, test)$AppCindex$coxph
+}
+```
+```{r, echo=FALSE}
+aic <- c(AIC1_values, AIC2_values)
+bic <- c(BIC1_values, BIC2_values)
+cindex <- c(cindex1_values, cindex2_values)
+model <- c(rep('Model 1', reps), rep('Model 2', reps))
+sim.data <- data.frame (aic, bic, cindex, model)
+
+par(mfrow=c(1,3))
+mu <- ddply(sim.data, "model", summarise, grp.mean=mean(aic))
+p1<-ggplot(sim.data) + geom_density(aes(x = aic, color=model, fill = model), alpha = 0.2) + geom_vline(data=mu, aes(xintercept=grp.mean, color=model), linetype="dashed")
+
+mu <- ddply(sim.data, "model", summarise, grp.mean=mean(bic))
+p2<-ggplot(sim.data) + geom_density(aes(x = bic, color=model, fill = model), alpha = 0.2) + geom_vline(data=mu, aes(xintercept=grp.mean, color=model), linetype="dashed")
+
+mu <- ddply(sim.data, "model", summarise, grp.mean=mean(cindex))
+p3<-ggplot(sim.data) + geom_density(aes(x = cindex, color=model, fill = model), alpha = 0.2) + geom_vline(data=mu, aes(xintercept=grp.mean, color=model), linetype="dashed")
+
+plot_grid(p1, p2, p3, nrow=3, labels = c('A','B','C'))
+```
+
+Figure 5: Distributions of simulated AIC (A), BIC (B), and cindex (C) values. Lower AIC and higher cindex in Model 2 indicates a better fit. 
 
 ```{r, echo=FALSE}
 cox.zph(cox7)
@@ -231,7 +377,7 @@ cox.zph(cox7)
 
 Table 3: cox.zph output for the model. All p-values are insignificant. 
 
-$\Large{Discussion:}:
+### Discussion:
 
 1. Patient Selection
 
@@ -260,19 +406,23 @@ The final model (Model 2) uses treatment group, prior zdv, cd4, and treatment gr
 
 AIC can be used to compare models, and a lower AIC value corresponds to a better fit. AIC also on likelihood s, but does correct for differences in degrees of freedom so it is comparable between models and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected. The c index denotes the frequencies of concordant pairs among all pairs of subjects. Thus a higher c index is indicative of a better predictive model. A lower AIC and higher c index for this model over other models indicates that it is a better fit. Although the BIC is higher than that of other models, the selected model has more degrees of freedom, explaining the higher BIC value. Since two of the three measured used to assess the fit of models suggest that the selected model is better than other models, the higher BIC value is ignored. 
 
-Model 2 was also assessed for proportional hazards with cox.zph. The p-values for all covariates are insignificant, indicating that we cannot reject the hypothesis that the correlation between the Schoenfeld residuals and time is zero. Thus, all the covariates are not time-dependent and that the proportional hazards assumption is met with the model (Table 3, Figure 3). 
+Model 2 was also assessed for proportional hazards with cox.zph. The p-values for all covariates are insignificant, indicating that we cannot reject the hypothesis that the correlation between the Schoenfeld residuals and time is zero. Thus, all the covariates are not time-dependent and that the proportional hazards assumption is met with the model (Table 3, Figure 6). 
 
 ```{r, echo=FALSE}
 par(mfrow=c(2,3))
 plot(cox.zph(cox7))
 ```
 
-Figure 3: Schoenfeld residuals for all covariates plotted against time. Correlation is 0 for all covariates. 
+Figure 6: Schoenfeld residuals for all covariates plotted against time. Correlation is 0 for all covariates. 
 
-$\Large{References:}$
+### References:
 
-(1) hiv.va.gov/patient/diagnosis/labs-CD4-count.asp\\
-(2) aidsinfo.nih.gov/understanding-hiv-aids/fact-sheets/21/51/hiv-treatment--the-basics#\\
-(3) https://aidsinfo.nih.gov/guidelines/html/1/adult-and-adolescent-arv/458/plasma-hiv-1-rna--viral-load--and-cd4-count-monitoring\\
-(4) https://www.nejm.org/doi/full/10.1056/NEJM200103083441003\\
-(5) https://www.jstor.org/stable/pdf/2337123.pdf\\
+(1) hiv.va.gov/patient/diagnosis/labs-CD4-count.asp
+
+(2) aidsinfo.nih.gov/understanding-hiv-aids/fact-sheets/21/51/hiv-treatment--the-basics#
+
+(3) https://aidsinfo.nih.gov/guidelines/html/1/adult-and-adolescent-arv/458/plasma-hiv-1-rna--viral-load--and-cd4-count-monitoring
+
+(4) https://www.nejm.org/doi/full/10.1056/NEJM200103083441003
+
+(5) https://www.jstor.org/stable/pdf/2337123.pdf
