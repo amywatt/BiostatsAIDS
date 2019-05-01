@@ -144,7 +144,7 @@ The Schoenfeld residual for each covariate is equal to the difference between th
 
 Because maximum likelihood fails with time dependencies, Schoenfeld residuals are used. The R function cox.zph tests the proportionality of all predictors by creating interactions with time. It does this by correlating the Schoenfeld residuals against transformed time to test for independence between the residuals and time. Any correlation between the residuals and time indicate non-proportional hazards. Having very small p values indicates that the residuals are not constant over time, providing evidence the proportional hazards assumption is violated. Cox.zph will be used to later assess whether the final model (Model 2) follows the proportional hazards assumption. 
 
-3. Model Assessment 
+4. Model Assessment 
 
 AIC can be used to compare models, and a lower AIC value corresponds to a better fit. AIC relies on likelihoods, but does correct for differences in degrees of freedom so it is comparable between models and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected. The c index denotes the frequencies of concordant pairs among all pairs of subjects. Thus, a higher c index is indicative of a better predictive model. A lower AIC and higher c index for this model over other models indicates that it is a better fit. Although the BIC is higher than that of other models, the selected model has more degrees of freedom, explaining the higher BIC value. Since two of the three measured used to assess the fit of models suggest that Model 2 is better than other models (lower AIC, higher c index), the higher BIC value is ignored. 
 
