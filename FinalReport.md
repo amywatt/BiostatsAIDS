@@ -52,7 +52,7 @@ A survival curve and cumulative hazard curve of the whole patient population sho
 
 Figure 3: Survival curve and cumulative hazard curve of patient population.
 
-The individual covariates txgrp, karnof, cd4, and strat2 have significant correlation coefficients (Table 1). The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. The survival probabilities of patients differ across all variables (txgrp, karnof, cd4). When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When Karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards (Figure 4).
+The individual covariates txgrp, karnof, cd4, and strat2 have significant coefficient estimates (Table 1A, Table 1B). The order of covariates in order of most to least significant is karnof, cd4, txgrp, strat2, age, ivdrug, prior zdv, sex, hemophil and raceth categorical variables. Because strat2 conveys very similar information to cd4, I will only use cd4 because it is more significant. The survival probabilities of patients differ across all variables (txgrp, karnof, cd4). When treatment is the variable, the complimentary log log curves clearly do not cross, indication proportional hazards. When Karnofsky score is the variable, scores of 90 and 100 overlap a bit, but are essentially the same curve (and the confidence intervals are very large and overlapping), so proportional hazards holds. When CD4 is the variable, the curves for the higher categories have some overlap, but once again have extremely large and overlapping confidence intervals, so we can assume proportional hazards (Figure 4).
 
 
 ```
@@ -60,7 +60,6 @@ The individual covariates txgrp, karnof, cd4, and strat2 have significant correl
 ## txgrp      -0.76   0.47 (0.28-0.77)       8.9  0.0028
 ## sex          0.2     1.2 (0.65-2.3)      0.39    0.53
 ## strat2      -1.3   0.27 (0.16-0.45)        25 5.5e-07
-## raceth    0.0036       1 (0.77-1.3)         0    0.98
 ## ivdrug     -0.13    0.88 (0.62-1.2)      0.52    0.47
 ## hemophil    0.27     1.3 (0.41-4.2)      0.21    0.65
 ## karnof    -0.081    0.92 (0.9-0.95)        34 6.9e-09
@@ -69,16 +68,29 @@ The individual covariates txgrp, karnof, cd4, and strat2 have significant correl
 ## age        0.017         1 (0.99-1)       1.8    0.18
 ```
 
-Table 1: Estimates and Wald test for individual covariates. 
+Table 1A: Estimates and Wald test for individual covariates (expect race/ethnicity).
 
-![](FinalReport_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](FinalReport_files/figure-html/unnamed-chunk-6-2.png)<!-- -->![](FinalReport_files/figure-html/unnamed-chunk-6-3.png)<!-- -->
+
+```
+## # A tibble: 4 x 7
+##   term              estimate std.error statistic p.value conf.low conf.high
+##   <chr>                <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl>
+## 1 raceth_textAsian…    0.751      1.22     0.613   0.540    -1.65      3.15
+## 2 raceth_textBlack…   -0.336      1.03    -0.326   0.745    -2.36      1.68
+## 3 raceth_textHispa…   -0.272      1.04    -0.261   0.794    -2.32      1.78
+## 4 raceth_textWhite…   -0.145      1.01    -0.143   0.886    -2.13      1.84
+```
+
+Table 1B: Estimates and Wald test for race/ethnicity.
+
+![](FinalReport_files/figure-html/unnamed-chunk-7-1.png)<!-- -->![](FinalReport_files/figure-html/unnamed-chunk-7-2.png)<!-- -->![](FinalReport_files/figure-html/unnamed-chunk-7-3.png)<!-- -->
 
 Figure 4: Kaplan-Meier survival curves and complimentary log log curves for variables treatment group, Karnofsky, and CD4. 
 
 
 The model built using forwards selection resulted in only the covariates txgrp, karnof and cd4 (Model 1). Replacing CD4 in Model 1 with a categorical CD4 variable (<=50, 51-100, 101-150, 151-200, >200) revealed that the log(HR) was not constant between the groups of equal size and thus CD4 is not a linear variable. But, when assessed with AIC and BIC values, the linear model (AIC=836.0552, BIC=850.2945) was lower than that of the categorical model (AIC=839.3151, BIC=867.7936), indicating that the linear model provided a better fit. 
 
-Several models with interaction terms building upon Model 1 were tested and many were found to be insignificant. Variables to be interacted were determined based on prior knowledge on treatments. Because prior treatment can affect response to current treatment, txgrp and priorzdv were interacted (Table 2) and found to be near significant (p=0.058) when compared to Model 1 with a likelihood ratio test. 
+Several models with interaction terms building upon Model 1 were tested and many were found to be insignificant. Variables to be interacted were determined based on prior knowledge on treatments. Because prior treatment can affect response to current treatment, txgrp and priorzdv were interacted in Model 2 and found to be near significant (p=0.058) when compared to Model 1 with a likelihood ratio test (Table 2). 
 
 
 ```
@@ -96,12 +108,47 @@ Table 2: Estimates and significance levels for a Cox model (Model 2) using treat
 
 4. Model Assessment
 
-The AIC of Model 2 was 834.35, lower than that of the previous model, but the BIC was 858.08, greater than that of the previous model. Analysis of the c index revealed that the index of Model 1 (0.7759482) was less than that of Model 2 (0.7814926), indicating Model 2 is a better fit. Repeated simulations of building models with 75% of the data, and calculating AIC, BIC, and c index with the remaining data revealed that Model 2 had a lower AIC and c index on average (Figure 5). Analysis of Model 2 with cox.zph revealed proportional hazards (Table 3). 
+Model 1 contains the covariates txgrp, karnof and cd4. Model 2 contains the covariates txgrp, karnof, cd4, The AIC of Model 2 was 834.35, lower than that of the previous model, but the BIC was 858.08, greater than that of the previous model. Analysis of the c index revealed that the index of Model 1 (0.7759482) was less than that of Model 2 (0.7814926), indicating Model 2 is a better fit. Repeated simulations of building models with 75% of the data, and calculating AIC, BIC, and c index with the remaining data revealed that Model 2 had a lower AIC and c index on average (Figure 5). Analysis of Model 2 with cox.zph revealed proportional hazards (Table 3). 
 
 
-![](FinalReport_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](FinalReport_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 Figure 5: Distributions of simulated AIC (A), BIC (B), and cindex (C) values. Lower AIC and higher cindex in Model 2 indicates a better fit. 
+
+### Discussion:
+
+1. Patient Selection
+
+The statistically significant disproportion of demographics represented in the clinical study suggests that the results cannot be generalized to the whole population. The results are most applicable to white, non-Hispanic males. In 2017, African Americans and Hispanics were the most affected by HIV. African Americans accounted for 41% of HIV diagnoses and Hispanics accounted for 16%. White individuals, on the other hand, accounted for only 5% of diagnoses in 2017 (5). The distribution of race/ethnicity in the patients seletced for the study do not accurately represent the groups most affected by HIV, nor are results applicable to these groups. 
+
+2. Model Building 
+
+The Cox Proportional Hazards model describes the relationship between the hazard of an individual based on one or more explanatory variables (covariates). Thus, it can help estimate the effectiveness of treatment and can provide an estimate of the hazard ratio based on the covariates. The Cox model relies on the assumption that there are proportional hazards (the ratio of hazards for any two individuals is constant over time). This is because the Cox model is built on the following: $h_i(t) = h_0(t)e^{\beta x_i}$ for the $i$th individual. Then, the hazard ratio for individuals $i$ and $j$ is $\frac{h_0(t)e^{\beta x_i}}{h_0(t)e^{\beta x_j}}=e^{\beta(x_i-x_j)}$, so there are proportional hazards for any two individuals, independent of time. Additionally, $e^{\beta_k}$ can be interpreted as the hazard ratio associated with a one unit increase in covariate $k$. Because the Cox model is built upon a proportional hazards assumption, it is important to investigate and confirm whether there are proportional hazards in a proposed model. 
+
+Under the proportional hazards assumption, the $\beta$ coefficients are determined with maximum likelihoodestimation, meaning we estimate the parameters to maximize the likelihood of the observed data. The likelihoodof the $i$th individual dying at $t_i$ (given there is at least one death at $t_i$) is $\frac{P(i^{th} \text{ indiv w/}x_i \text{ dies at } t_i)}{P(\text{at least one death at } t_i)} = \frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}}$. The likelihood of $\beta$ is equal to the product of the likelihood s of all the individuals who have death times recorded, so $\delta_i$ serves as an indicator for events. 
+
+\begin{eqnarray*}
+L(\beta) &=& \prod_{i=1}^{n} {(\frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}})}^{\delta_i}\\
+ln(L(\beta)) &=& \sum_{i=1}^{n}\delta_i (\beta x_i - ln(\sum_{k:t_k>t_i}e^{\beta x_k}))\\
+\end{eqnarray*}
+
+The log-likelihood is a function of only the coefficients and observed data with no assumptions on the distribution of event times. $b=\hat{\beta}$ is determined by setting partial derivatives of the log-likelihood with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 x_{i1} + \beta_2(t) x_{i2}(t)}$, where $\beta_1$ and $\beta_2$ are the coefficients of time-fixed and time-varying covariates respectively. Thus, the hazard ratio is no longer time-independent. To test whether a covariate should enter the model as independent of time, we want to test the hypothesis $\beta_2 = 0$. We can no longer use the likelihood to calculate $\beta_2$ estimates because $\beta$ is now a function of time and we cannot maximize its likelihood (6). 
+
+The Schoenfeld residual for each covariate is equal to the difference between the observed and expected value of the covariate at each event time. Schoenfeld showed that the residuals are asymptotically uncorrelated and have an expected value of 0 under the Cox model. 
+
+Because maximum likelihood fails with time dependencies, Schoenfeld residuals are used. The R function cox.zph tests the proportionality of all predictors by creating interactions with time. It does this by correlating the Schoenfeld residuals against transformed time to test for independence between the residuals and time. Any correlation between the residuals and time indicate non-proportional hazards. Having very small p values indicates that the residuals are not constant over time, providing evidence the proportional hazards assumption is violated. Cox.zph will be used to later assess whether the final model (Model 2) follows the proportional hazards assumption. 
+
+Model 2 uses treatment group, prior zdv, cd4, and treatment group and prior zdv interacting (Table 2). The estimate for treatment group coefficient is 0.0484 (-0.730, 0.826) with a p-value of 0.903. There is no evidence to show that the estimate for the treatment group coefficient to be different from 0, indicating that the hazard ratio between the two treatment groups is the same. The estimate for prior zdv coefficient is 0.0347 (0.00266, 0.0668) with a p-value of 0.0338. Thus, we can conclude that the a one unit increase in months of prior zdv treatment is associated with a 1.035 factor increase of the hazard. The estimate for the treatment group and prior zdv interaction coefficient is -0.288 (-0.0559, -0.00167) with a p-value of 0.0375. This indicates that the effects of treatment changes based on the length of prior zdv treatment. The hazard for an individual with IDV treatment is approximately three quarters of the hazard for an individual without IDV treatment with the same amount of prior zdv treatment. The estimate for the coefficient of Karnofsky score is -0.559 (-0.0835, -0.0284) with a p-value of 0.000684. The Karnofsky score is reported in increments of 10, and a 10 unit increase in Karnofsky score is associated with a 0.0037 factor change in hazard. Lastly, the estimate for the coefficient for CD4 is -0.146 (-0.020, -0.00852) with a p-value of 0.00000234. A one unit increase in CD4 cell count is associated with a .864 factor change in hazard. Increases in both Karnofsky score and CD4 decrease the hazard, while an increase in prior zdv increases the hazard. 
+
+3. Model Assessment 
+
+AIC can be used to compare models, and a lower AIC value corresponds to a better fit. AIC also on likelihood s, but does correct for differences in degrees of freedom so it is comparable between models and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected. The c index denotes the frequencies of concordant pairs among all pairs of subjects. Thus, a higher c index is indicative of a better predictive model. A lower AIC and higher c index for this model over other models indicates that it is a better fit. Although the BIC is higher than that of other models, the selected model has more degrees of freedom, explaining the higher BIC value. Since two of the three measured used to assess the fit of models suggest that the selected model is better than other models, the higher BIC value is ignored. 
+
+Model 2 was also assessed for proportional hazards with cox.zph. From the cox.zph output, the smallest p-value is 0.232 (cd4), which is much larger than the 0.05 standard for significance. The probability of the observed correlation between the cd4 data and time (or more extreme) is 23.2% under the assumption that the correlation coefficient is 0. There is not enough evidence to prove that the correlation coefficient is different from 0. The p-values for all covariates are insignificant, indicating that we cannot reject the hypothesis that the correlation between the Schoenfeld residuals and time is zero. Thus, all the covariates are not time-dependent and that the proportional hazards assumption is met with the model (Table 3, Figure 6). 
+
+![](FinalReport_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+
+Figure 6: Schoenfeld residuals for all covariates plotted against time. Correlation is 0 for all covariates. 
 
 
 ```
@@ -114,43 +161,12 @@ Figure 5: Distributions of simulated AIC (A), BIC (B), and cindex (C) values. Lo
 ## GLOBAL              NA 2.439 0.786
 ```
 
-Table 3: cox.zph output for the model. All p-values are insignificant. 
+Table 3: cox.zph output for the model. All p-values are insignificant.
 
-### Discussion:
-
-1. Patient Selection
-
-The statistically significant disproportion of demographics represented in the clinical study suggests that the results cannot be generalized to the whole population. The results are most applicable to white, non-Hispanic males. 
-
-2. Model Building 
-
-The Cox Proportional Hazards model describes the relationship between survival of an individual based on one or more explanatory variables (covariates). Thus, it can help estimate the effectiveness of treatment on survival and can provide an estimate of the hazard function (the likelihood of the event occurring at any given point in time) based on the covariates. The Cox model relies on the assumption that there are proportional hazards (the ratio of hazards for any two individuals is constant over time). This is because the Cox model is built on the following: $h_i(t) = h_0(t)e^{\beta x_i}$ for the $i$th individual. Then, the hazard ratio for individuals $i$ and $j$ is $\frac{h_0(t)e^{\beta x_i}}{h_0(t)e^{\beta x_j}}=e^{\beta(x_i-x_j)}$, so there are proportional hazards for any two individuals, independent of time. Additionally, $e^{\beta_k}$ can be interpreted as the hazard ratio associated with a one unit increase in covariate $k$. Because the Cox model is built upon a proportional hazards assumption, it is important to investigate and confirm whether there are proportional hazards in a proposed model. 
-
-Under the proportional hazards assumption, the $\beta$ coefficients are determined with maximum likelihoodestimation, meaning we estimate the parameters to maximize the likelihood of the observed data. The likelihoodof the $i$th individual dying at $t_i$ (given there is at least one death at $t_i$) is $\frac{P(i^{th} \text{ indiv w/}x_i \text{ dies at } t_i)}{P(\text{at least one death at } t_i)} = \frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}}$. The likelihood of $\beta$ is equal to the product of the likelihood s of all the individuals who have death times recorded, so $\delta_i$ serves as an indicator for events. 
-
-\begin{eqnarray*}
-L(\beta) &=& \prod_{i=1}^{n} {(\frac{e^{\beta x_i}}{\sum_{k:t_k>t_i}e^{\beta x_k}})}^{\delta_i}\\
-ln(L(\beta)) &=& \sum_{i=1}^{n}\delta_i (\beta x_i - ln(\sum_{k:t_k>t_i}e^{\beta x_k}))\\
-\end{eqnarray*}
-
-The log-likelihood is a function of only the coefficients and observed data with no assumptions on the distribution of event times. $b=\hat{\beta}$ is determined by setting partial derivatives of the log-likelihood with respect to $\beta$ equal to 0. When proportional hazards are violated, the hazard ratio is dependent on time. Thus, $h_i(t)=h_0(t)e^{\beta_1 x_{i1} + \beta_2(t) x_{i2}(t)}$, where $\beta_1$ and $\beta_2$ are the coefficients of time-fixed and time-varying covariates respectively. Thus, the hazard ratio is no longer time-independent. To test whether a covariate should enter the model as independent of time, we want to test the hypothesis $\beta_2 = 0$. We can no longer use the likelihood to calculate $\beta_2$ estimates because $\beta$ is now a function of time and we cannot maximize its likelihood (5). 
-
-The Schoenfeld residual for each covariate is equal to the difference between the observed and expected value of the covariate at each event time. Schoenfeld showed that the residuals are asymptotically uncorrelated and have an expected value of 0 under the Cox model. 
-
-Because maximum likelihood fails with time dependencies, Schoenfeld residuals are used. The R function cox.zph tests the proportionality of all predictors by creating interactions with time. It does this by correlating the Schoenfeld residuals against transformed time to test for independence between the residuals and time. Any correlation between the residuals and time indicate non-proportional hazards. Having very small p values indicates that the residuals are not constant over time, providing evidence the proportional hazards assumption is violated. 
-
-The final model (Model 2) uses treatment group, prior zdv, cd4, and treatment group and prior zdv interacting. The estimate for treatment group coefficient is 0.0484 (-0.730, 0.826) with a p-value of 0.903. There is no evidence to show that the estimate for the treatment group coefficient to be different from 0, indicating that the hazard ratio between the two treatment groups is the same. The estimate for prior zdv coefficient is 0.0347 (0.00266, 0.0668) with a p-value of 0.0338. Thus, we can conclude that the a one unit increase in months of prior zdv treatment is associated with a 1.035 factor increase of the hazard. The estimate for the treatment group and prior zdv interaction coefficient is -0.288 (-0.0559, -0.00167) with a p-value of 0.0375. This indicates that the effects of treatment changes based on the length of prior zdv treatment. The hazard for an individual with IDV treatment is approximately three quarters of the hazard for an individual without IDV treatment with the same amount of prior zdv treatment. The estimate for the coefficient of Karnofsky score is -0.559 (-0.0835, -0.0284) with a p-value of 0.000684. The Karnofsky score is reported in increments of 10, and a 10 unit increase in Karnofsky score is associated with a 0.0037 factor change in hazard. Lastly, the estimate for the coefficient for CD4 is -0.146 (-0.020, -0.00852) with a p-value of 0.00000234. A one unit increase in CD4 cell count is associated with a .864 factor change in hazard. Increases in both Karnofsky score and CD4 decrease the hazard, while an increase in prior zdv increases the hazard. 
-
-3. Model Assessment 
-
-AIC can be used to compare models, and a lower AIC value corresponds to a better fit. AIC also on likelihood s, but does correct for differences in degrees of freedom so it is comparable between models and can be used to estimate whether one model provides a better fit. BIC is similar to AIC but penalizes model complexity more heavily. Models that minimize AIC/BIC should be selected. The c index denotes the frequencies of concordant pairs among all pairs of subjects. Thus, a higher c index is indicative of a better predictive model. A lower AIC and higher c index for this model over other models indicates that it is a better fit. Although the BIC is higher than that of other models, the selected model has more degrees of freedom, explaining the higher BIC value. Since two of the three measured used to assess the fit of models suggest that the selected model is better than other models, the higher BIC value is ignored. 
-
-Model 2 was also assessed for proportional hazards with cox.zph. The p-values for all covariates are insignificant, indicating that we cannot reject the hypothesis that the correlation between the Schoenfeld residuals and time is zero. Thus, all the covariates are not time-dependent and that the proportional hazards assumption is met with the model (Table 3, Figure 6). 
-
-![](FinalReport_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
-
-Figure 6: Schoenfeld residuals for all covariates plotted against time. Correlation is 0 for all covariates. 
-
+### Conclusion: 
+final model, trt working, whites
+sim in methods
+discussion assessing proportional hazards
 ### References:
 
 (1) HIV/AIDS. (2005, June 21). Retrieved June 14, 2019, from https://www.hiv.va.gov/patient/diagnosis/labs-CD4-count.asp
@@ -161,4 +177,6 @@ Figure 6: Schoenfeld residuals for all covariates plotted against time. Correlat
 
 (4) Sterling, T. R., Vlahov, D., Astemborski, J., Hoover, D. R., Margolick, J. B., & Quinn, T. C. (2001). Initial Plasma HIV-1 RNA Levels and Progression to AIDS in Women and Men. New England Journal of Medicine, 344(10), 720-725. doi:10.1056/nejm200103083441003
 
-(5) Grambsch, P. M., & Therneau, T. M. (1994). Proportional hazards tests and diagnostics based on weighted residuals. Biometrika, 81(3), 515-526. doi:10.1093/biomet/81.3.515
+(5) HIV Surveillance Report, 2017 (Rep.). (2018, November). Retrieved April 30, 2019, from Centers for Disease Control and Prevention website: http://www.cdc.gov/hiv/library/reports/hiv-surveillance.html
+
+(6) Grambsch, P. M., & Therneau, T. M. (1994). Proportional hazards tests and diagnostics based on weighted residuals. Biometrika, 81(3), 515-526. doi:10.1093/biomet/81.3.515
