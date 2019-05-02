@@ -364,12 +364,13 @@ pchisq((-2*cox4$loglik[2])-(-2*cox6$loglik[2]), d=6, lower.tail = FALSE)
 The p-value of 0.5398977 indicates that interaction between txgrp and cd4 is not needed in the model. 
 
 ```{r, echo=FALSE}
-cox7 <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4, data = aids, x=TRUE)
+cox7 <- coxph(Surv(time,censor) ~ txgrp*priorzdv + karnof + cd4f, data = aids, x=TRUE)
 cox.zph(cox7)
 cox7 %>% tidy()
 pchisq((-2*cox2$loglik[2])-(-2*cox7$loglik[2]), d=2, lower.tail = FALSE)
 extractAIC(cox7)
 extractAIC(cox7, k = log(length(aids$id)))
+cindex(cox7)
 ```
 
 This model still follows the proportional hazards assumption. The likelihood ratio test between Model 2 and 7 results in a p-value of 0.0576, which is just above the 0.05 cutoff for significance. It lowers AIC but BIC increases (likely because the model is more complex). Because it is extremely close to being significant and lowers the AIC, this is the final model. 
